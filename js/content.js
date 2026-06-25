@@ -228,8 +228,8 @@ function renderHeroSection() {
   const slider = document.querySelector('.hero-slider');
   if (!slider) return;
 
-  const slides = getHeroSlides();
-  if (slides.length === 0) return;
+  let slides = getHeroSlides();
+  if (slides.length === 0) slides = DEFAULT_HERO_SLIDES;
 
   const dotsHtml = slides.map((_, i) =>
     `<button class="hero-dot${i === 0 ? ' active' : ''}" aria-label="Slide ${i + 1}"></button>`
@@ -237,6 +237,7 @@ function renderHeroSection() {
 
   slider.innerHTML = slides.map(renderHeroSlideHtml).join('') +
     `<div class="hero-dots">${dotsHtml}</div>`;
+  slider.classList.add('hero-ready');
 }
 
 initContentStore();
