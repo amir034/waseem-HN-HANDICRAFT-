@@ -16,7 +16,9 @@ const ICONS = {
   admin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>`,
   plus: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`,
   logout: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>`,
-  mapPin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-4.5 7-10a7 7 0 10-14 0c0 5.5 7 10 7 10z"/><circle cx="12" cy="11" r="2.5"/></svg>`
+  mapPin: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-4.5 7-10a7 7 0 10-14 0c0 5.5 7 10 7 10z"/><circle cx="12" cy="11" r="2.5"/></svg>`,
+  eye: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>`,
+  eyeOff: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-10-8-10-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 10 8 10 8a18.5 18.5 0 01-2.16 3.19"/><path d="M1 1l22 22"/><path d="M14.12 14.12a3 3 0 01-4.24-4.24"/></svg>`
 };
 
 function getIcon(name) {
@@ -50,9 +52,41 @@ function initSocialIcons() {
   });
 }
 
+function setToggleIcon(btn, iconName) {
+  const svg = getIcon(iconName);
+  if (!svg) return;
+  const existing = btn.querySelector('svg');
+  if (existing) existing.outerHTML = svg;
+  else btn.insertAdjacentHTML('afterbegin', svg);
+}
+
+function initPasswordToggles() {
+  document.querySelectorAll('[data-password-toggle]').forEach(btn => {
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = '1';
+
+    const wrap = btn.closest('.password-field-wrap');
+    const input = wrap?.querySelector('input');
+    if (!input) return;
+
+    if (!btn.querySelector('svg') && getIcon('eye')) {
+      btn.insertAdjacentHTML('afterbegin', getIcon('eye'));
+    }
+
+    btn.addEventListener('click', () => {
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      btn.classList.toggle('is-visible', show);
+      setToggleIcon(btn, show ? 'eyeOff' : 'eye');
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof initWhatsAppLinks === 'function') initWhatsAppLinks();
   if (typeof initContactEmail === 'function') initContactEmail();
   initSocialIcons();
   initIcons();
+  initPasswordToggles();
 });

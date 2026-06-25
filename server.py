@@ -77,6 +77,27 @@ class SiteHandler(SimpleHTTPRequestHandler):
 
     def do_PUT(self):
         path = urlparse(self.path).path
+
+        if path == '/api/users/update':
+            payload = self.read_json()
+            email = normalize_email(payload.get('email'))
+            if not email or email == ADMIN_EMAIL:
+                self.send_json({'success': False, 'message': 'Invalid user.'}, 400)
+                return
+            store = load_store()
+            users = store.setdefault('users', [])
+            user = find_user(users, email)
+            if not user:
+                self.send_json({'success': False, 'message': 'User not found.'}, 404)
+                return
+            for key, value in payload.items():
+                if key not in ('email', 'id'):
+                    user[key] = value
+            user['email'] = email
+            save_store(store)
+            self.send_json({'success': True, 'user': user})
+            return
+
         if path != '/api/users':
             self.send_error(404)
             return

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=11">
+  <link rel="stylesheet" href="css/style.css?v=12">
 </head>
 <body class="auth-page">
 
@@ -38,7 +38,12 @@
         </div>
         <div class="form-group">
           <label for="password">Password</label>
-          <input type="password" id="password" placeholder="Your password" required>
+          <div class="password-field-wrap">
+            <input type="password" id="password" placeholder="Your password" required>
+            <button type="button" class="password-toggle-btn" aria-label="Show password" data-password-toggle>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
         </div>
         <p class="form-error" id="login-error"></p>
         <button type="submit" class="btn btn-primary btn-full">Login</button>
@@ -56,7 +61,7 @@
 
   <script src="js/config.js"></script>
   <script src="js/products.js"></script>
-  <script src="js/icons.js"></script>
+  <script src="js/icons.js?v=2"></script>
   <script src="js/auth.js"></script>
   <script src="js/cart.js"></script>
   <script>
@@ -80,10 +85,6 @@
       if (isLoggedIn() && !wantsAdmin) {
         window.location.replace(params.get('redirect') || 'index.html');
         return;
-      }
-
-      if (isLoggedIn() && wantsAdmin) {
-        localStorage.removeItem('hc_session');
       }
 
       document.getElementById('login-form').addEventListener('submit', async (e) => {

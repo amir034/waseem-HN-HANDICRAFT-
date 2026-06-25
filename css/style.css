@@ -1727,6 +1727,49 @@ body > .site-header {
   box-shadow: 0 0 0 3px rgba(194, 153, 88, 0.15);
 }
 
+.password-field-wrap {
+  position: relative;
+  display: block;
+}
+
+.password-field-wrap input {
+  width: 100%;
+  padding-right: 46px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: #888;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  padding: 0;
+  z-index: 2;
+  transition: var(--transition-smooth);
+}
+
+.password-toggle-btn:hover,
+.password-toggle-btn.is-visible {
+  color: var(--color-accent);
+  background: rgba(194, 153, 88, 0.1);
+}
+
+.password-toggle-btn svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+  pointer-events: none;
+}
+
 .form-error {
   color: #c0392b;
   font-size: 0.82rem;

@@ -1,3 +1,14 @@
 {
-  "users": []
+  "users": [
+    {
+      "id": "user_1782386988477",
+      "name": "user",
+      "email": "user@gmail.com",
+      "password": "123321",
+      "addresses": [],
+      "loginCount": 1,
+      "lastLogin": "2026-06-25T11:29:48.479820Z",
+      "createdAt": "2026-06-25T11:29:48.479878Z"
+    }
+  ]
 }
