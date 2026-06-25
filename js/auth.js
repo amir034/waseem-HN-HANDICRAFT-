@@ -3,13 +3,28 @@ const SESSION_KEY = 'hc_session';
 const ADMIN_SESSION_KEY = 'hc_admin_session';
 const ADMIN_EMAIL = 'admin@gmail.com';
 const ADMIN_PASSWORD = '123321';
-const SERVER_REQUIRED_MSG = 'Please start the website server first: double-click start-server.bat in your website folder, then open http://localhost:8080 in your browser (use the same link on your phone).';
+const API_TIMEOUT_MS = 4000;
+const SERVER_TIP = 'For login on all devices, double-click start-server.bat and open http://localhost:8080';
 
 let authSyncReady = null;
 
 function startAuthSync() {
   if (!authSyncReady) authSyncReady = initAuthSync();
   return authSyncReady;
+}
+
+async function fetchWithTimeout(url, options = {}, timeoutMs = API_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function isFileProtocol() {
+  return window.location.protocol === 'file:';
 }
 
 function normalizeEmail(email) {
@@ -72,9 +87,10 @@ async function syncUserToServer(user) {
 }
 
 async function isApiAvailable() {
+  if (isFileProtocol()) return false;
   if (window.HC_API_ENABLED) return true;
   try {
-    const res = await fetch('/api/health', { method: 'GET' });
+    const res = await fetchWithTimeout('/api/health', { method: 'GET' });
     if (res.ok) {
       window.HC_API_ENABLED = true;
       return true;
@@ -108,12 +124,16 @@ function mergeUsersFromServer(serverUsers) {
 }
 
 async function initAuthSync() {
+  if (isFileProtocol()) {
+    window.HC_API_ENABLED = false;
+    return;
+  }
   try {
-    const res = await fetch('/api/health');
+    const res = await fetchWithTimeout('/api/health');
     if (!res.ok) return;
     window.HC_API_ENABLED = true;
 
-    const usersRes = await fetch('/api/users');
+    const usersRes = await fetchWithTimeout('/api/users');
     if (!usersRes.ok) return;
 
     const data = await usersRes.json();
@@ -222,29 +242,35 @@ async function signup(name, email, password) {
     return { success: false, message: 'Please enter your full name.' };
   }
 
-  if (!(await isApiAvailable())) {
-    return { success: false, message: SERVER_REQUIRED_MSG };
+  if (await isApiAvailable()) {
+    try {
+      const res = await fetchWithTimeout('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), email, password })
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        upsertLocalUser({ ...data.user, password }, password);
+        localStorage.setItem(SESSION_KEY, email);
+        localStorage.removeItem(ADMIN_SESSION_KEY);
+        if (typeof migrateLegacyCart === 'function') migrateLegacyCart(email);
+        if (typeof updateCartCount === 'function') updateCartCount();
+        return { success: true };
+      }
+      if (data.message) {
+        return { success: false, message: data.message };
+      }
+    } catch {
+      /* fall back to local signup */
+    }
   }
 
-  try {
-    const res = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: name.trim(), email, password })
-    });
-    const data = await res.json();
-    if (data.success && data.user) {
-      upsertLocalUser({ ...data.user, password }, password);
-      localStorage.setItem(SESSION_KEY, email);
-      localStorage.removeItem(ADMIN_SESSION_KEY);
-      if (typeof migrateLegacyCart === 'function') migrateLegacyCart(email);
-      if (typeof updateCartCount === 'function') updateCartCount();
-      return { success: true };
-    }
-    return { success: false, message: data.message || 'Could not create account.' };
-  } catch {
-    return { success: false, message: SERVER_REQUIRED_MSG };
+  const local = signupLocal(name, email, password);
+  if (local.success && await isApiAvailable()) {
+    syncUserToServer(getUsers().find(u => normalizeEmail(u.email) === email));
   }
+  return local;
 }
 
 function loginLocal(email, password) {
@@ -276,30 +302,39 @@ async function login(email, password) {
     return { success: false, message: 'Invalid admin password.' };
   }
 
-  if (!(await isApiAvailable())) {
-    return { success: false, message: SERVER_REQUIRED_MSG };
+  if (await isApiAvailable()) {
+    try {
+      const res = await fetchWithTimeout('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        const user = upsertLocalUser({ ...data.user, password }, password);
+        localStorage.setItem(SESSION_KEY, email);
+        localStorage.removeItem(ADMIN_SESSION_KEY);
+        recordUserLogin(email);
+        if (typeof migrateLegacyCart === 'function') migrateLegacyCart(email);
+        if (typeof updateCartCount === 'function') updateCartCount();
+        return { success: true, user, isAdmin: false };
+      }
+      if (data.message) {
+        return { success: false, message: data.message };
+      }
+    } catch {
+      /* fall back to local login */
+    }
   }
 
-  try {
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (data.success && data.user) {
-      const user = upsertLocalUser({ ...data.user, password }, password);
-      localStorage.setItem(SESSION_KEY, email);
-      localStorage.removeItem(ADMIN_SESSION_KEY);
-      recordUserLogin(email);
-      if (typeof migrateLegacyCart === 'function') migrateLegacyCart(email);
-      if (typeof updateCartCount === 'function') updateCartCount();
-      return { success: true, user, isAdmin: false };
-    }
-    return { success: false, message: data.message || 'Invalid email or password.' };
-  } catch {
-    return { success: false, message: SERVER_REQUIRED_MSG };
+  const local = loginLocal(email, password);
+  if (!local.success && (isFileProtocol() || !(await isApiAvailable()))) {
+    return {
+      success: false,
+      message: local.message + '. ' + SERVER_TIP + '.'
+    };
   }
+  return local;
 }
 
 function logout() {
