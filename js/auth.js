@@ -355,7 +355,14 @@ async function login(email, password) {
   if (!local.success && window.HC_API_ENABLED && !window.HC_API_PERSIST) {
     return {
       success: false,
-      message: 'Account not found on this device. Connect Upstash Redis in your Vercel project (Storage → Redis), redeploy, then sign up again to use login on all devices.'
+      message:
+        'Account not found. Sign up first on any device. If you already signed up, connect Vercel Blob storage (Storage → Blob) and redeploy.'
+    };
+  }
+  if (!local.success && window.HC_API_ENABLED) {
+    return {
+      success: false,
+      message: 'Invalid email or password.'
     };
   }
   return local;

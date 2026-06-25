@@ -1,5 +1,5 @@
 const { sendJson, methodNotAllowed } = require('../lib/http');
-const { canPersist } = require('../lib/store');
+const { canPersist, getStorageMode } = require('../lib/store');
 
 module.exports = async (req, res) => {
   if (req.method !== 'GET') {
@@ -8,6 +8,7 @@ module.exports = async (req, res) => {
   }
   sendJson(res, {
     ok: true,
-    persist: canPersist()
+    persist: canPersist(),
+    storage: getStorageMode()
   });
 };

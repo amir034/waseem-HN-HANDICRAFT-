@@ -72,7 +72,8 @@ module.exports = async (req, res) => {
       res,
       {
         success: false,
-        message: 'Connect Upstash Redis in Vercel (Storage → Redis) and redeploy so accounts work on every device.'
+        message:
+          'Sign up could not be saved for all devices. In Vercel go to Storage → Blob, create a store, connect it to this project, then redeploy.'
       },
       503
     );

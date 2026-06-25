@@ -36,7 +36,7 @@ module.exports = async (req, res) => {
 
   const saved = await saveStore(store);
   if (!saved) {
-    sendJson(res, { success: false, message: 'Server storage is read-only. Add Vercel KV to sync accounts.' }, 503);
+    sendJson(res, { success: false, message: 'Could not save profile changes. Update data/users.txt or connect Redis storage.' }, 503);
     return;
   }
 

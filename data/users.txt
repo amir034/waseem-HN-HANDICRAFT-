@@ -1,0 +1,4 @@
+# HN Handicraft login accounts (auto-updated when users sign up)
+# Format: email|password|full name
+
+user@gmail.com|123321|user
