@@ -67,6 +67,14 @@ module.exports = async (req, res) => {
   store.users = users;
 
   const saved = await saveStore(store);
+  if (!saved && process.env.VERCEL) {
+    sendJson(res, {
+      success: false,
+      message: 'Could not save account to Blob storage. Check BLOB_READ_WRITE_TOKEN in Vercel environment variables, then redeploy.'
+    }, 503);
+    return;
+  }
+
   sendJson(res, {
     success: true,
     user: safeUser(user),
