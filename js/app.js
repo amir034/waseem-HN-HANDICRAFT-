@@ -287,6 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCartCount();
   updateAuthUI();
   initWelcomeMessage();
+  initSignupNotice();
 
   renderArtisansSection();
 

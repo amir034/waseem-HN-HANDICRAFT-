@@ -67,18 +67,9 @@ module.exports = async (req, res) => {
   store.users = users;
 
   const saved = await saveStore(store);
-  if (!saved) {
-    sendJson(
-      res,
-      {
-        success: false,
-        message:
-          'Sign up could not be saved for all devices. In Vercel go to Storage → Blob, create a store, connect it to this project, then redeploy.'
-      },
-      503
-    );
-    return;
-  }
-
-  sendJson(res, { success: true, user: safeUser(user) });
+  sendJson(res, {
+    success: true,
+    user: safeUser(user),
+    savedToServer: saved
+  });
 };

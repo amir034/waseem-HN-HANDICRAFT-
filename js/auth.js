@@ -274,10 +274,16 @@ async function signup(name, email, password) {
         localStorage.removeItem(ADMIN_SESSION_KEY);
         if (typeof migrateLegacyCart === 'function') migrateLegacyCart(email);
         if (typeof updateCartCount === 'function') updateCartCount();
+        if (data.savedToServer === false) {
+          sessionStorage.setItem(
+            'hc_signup_notice',
+            'Account saved on this device. Connect Blob to your Vercel project and redeploy for login on all devices.'
+          );
+        }
         return { success: true };
       }
-      if (data.message) {
-        return { success: false, message: data.message };
+      if (res.status === 409 || res.status === 400) {
+        return { success: false, message: data.message || 'Could not create account.' };
       }
     } catch {
       /* fall back to local signup */
@@ -352,18 +358,8 @@ async function login(email, password) {
       message: local.message + '. ' + SERVER_TIP + '.'
     };
   }
-  if (!local.success && window.HC_API_ENABLED && !window.HC_API_PERSIST) {
-    return {
-      success: false,
-      message:
-        'Account not found. Sign up first on any device. If you already signed up, connect Vercel Blob storage (Storage → Blob) and redeploy.'
-    };
-  }
   if (!local.success && window.HC_API_ENABLED) {
-    return {
-      success: false,
-      message: 'Invalid email or password.'
-    };
+    return { success: false, message: 'Invalid email or password.' };
   }
   return local;
 }
@@ -434,6 +430,19 @@ function redirectAfterLogin(isAdminLogin, user) {
 
 function setWelcomeMessage(name) {
   if (name) sessionStorage.setItem('hc_show_welcome', name);
+}
+
+function consumeSignupNotice() {
+  const note = sessionStorage.getItem('hc_signup_notice');
+  if (!note) return null;
+  sessionStorage.removeItem('hc_signup_notice');
+  return note;
+}
+
+function initSignupNotice() {
+  const note = consumeSignupNotice();
+  if (!note || typeof showToast !== 'function') return;
+  showToast(note);
 }
 
 function consumeWelcomeMessage() {
