@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cart — HN Handicraft</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <nav class="nav-left">
+        <a href="shop.html">Shop</a>
+        <a href="index.html">Home</a>
+      </nav>
+      <a href="index.html" class="logo-area">
+        <div class="site-logo">HN <span>Handicraft</span></div>
+      </a>
+      <div class="nav-right">
+        <a href="login.html" class="nav-icon" aria-label="Account" data-auth="guest" data-icon="user"></a>
+        <a href="profile.html" class="nav-icon" aria-label="My Profile" data-auth="user" style="display:none" data-icon="user"></a>
+        <button type="button" class="nav-icon nav-icon-logout" aria-label="Logout" data-auth="user" style="display:none" data-icon="logout" onclick="logout()"></button>
+        <a href="admin.html" class="nav-icon nav-icon-admin" aria-label="Admin Panel" data-auth="admin" style="display:none" data-icon="admin"></a>
+        <a href="cart.html" class="nav-icon" aria-label="Cart" data-icon="cart">
+          <span class="cart-count" style="display:none">0</span>
+        </a>
+        <button class="mobile-menu-btn" aria-label="Menu" data-icon="menu"></button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="mobile-nav">
+    <button class="mobile-nav-close" aria-label="Close" data-icon="close"></button>
+    <a href="index.html">Home</a>
+    <a href="shop.html">Shop</a>
+    <a href="cart.html">Cart</a>
+    <a href="login.html" data-auth="guest">Login</a>
+    <a href="profile.html" data-auth="user" style="display:none">My Profile</a>
+  </nav>
+
+  <div class="page-hero">
+    <div class="container">
+      <p class="breadcrumb"><a href="index.html">Home</a> / Cart</p>
+      <h1>Your Cart</h1>
+    </div>
+  </div>
+
+  <div class="container" id="cart-content"></div>
+
+  <footer class="site-footer" data-site-footer></footer>
+
+  <a href="https://wa.me/918273038804" class="whatsapp-fab" data-whatsapp-link target="_blank" rel="noopener" aria-label="WhatsApp" data-icon="whatsapp"></a>
+
+  <script src="js/config.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/content.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/checkout.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    function renderCartItems() {
+      const cart = getCart();
+      let html = '';
+      cart.forEach(item => {
+        const product = getProductById(item.productId);
+        if (!product) return;
+        html += `
+          <div class="cart-item">
+            <div class="cart-item-image">
+              <a href="product.html?id=${product.id}"><img src="${product.image}" alt="${product.name}"></a>
+            </div>
+            <div class="cart-item-info">
+              <h3><a href="product.html?id=${product.id}">${product.name}</a></h3>
+              <p class="category">${getCategoryLabels()[product.category] || product.category}</p>
+              <div class="quantity-selector" style="margin-top:8px;margin-bottom:0;">
+                <button onclick="updateCartQuantity('${product.id}', ${item.quantity - 1}); renderCart();">−</button>
+                <span>${item.quantity}</span>
+                <button onclick="updateCartQuantity('${product.id}', ${item.quantity + 1}); renderCart();">+</button>
+              </div>
+            </div>
+            <div>
+              <p class="cart-item-price">${formatPrice(getEffectivePrice(product) * item.quantity)}</p>
+              <button class="cart-item-remove" onclick="removeFromCart('${product.id}'); renderCart();">Remove</button>
+            </div>
+          </div>
+        `;
+      });
+      return html;
+    }
+
+    function renderReviewProducts() {
+      return getCart().map(item => {
+        const p = getProductById(item.productId);
+        if (!p) return '';
+        return `
+          <div class="review-product-item">
+            <img src="${p.image}" alt="${p.name}">
+            <div class="info">
+              <h4>${p.name}</h4>
+              <p>Qty: ${item.quantity}</p>
+            </div>
+            <span class="price">${formatPrice(getEffectivePrice(p) * item.quantity)}</span>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function setCheckoutStep(step) {
+      checkoutState.step = step;
+      document.querySelectorAll('.checkout-step-indicator').forEach((el, i) => {
+        el.classList.remove('active', 'done');
+        if (i + 1 < step) el.classList.add('done');
+        if (i + 1 === step) el.classList.add('active');
+      });
+      document.querySelectorAll('.checkout-panel').forEach((el, i) => {
+        el.classList.toggle('active', i + 1 === step);
+      });
+    }
+
+    function bindCheckoutEvents() {
+      document.querySelectorAll('input[name="saved-address"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          const user = getCurrentUser();
+          if (!user) return;
+          const addr = getUserAddresses(user.email).find(a => a.id === radio.value);
+          if (!addr) return;
+          applySavedAddressToCheckout(addr);
+          document.querySelectorAll('.saved-address-card').forEach(c => c.classList.remove('selected'));
+          radio.closest('.saved-address-card').classList.add('selected');
+          document.getElementById('review-address').innerHTML = renderReviewAddressHtml();
+          document.getElementById('review-products').innerHTML = renderReviewProducts();
+          setCheckoutStep(3);
+        });
+      });
+
+      const verifyBtn = document.getElementById('verify-pincode');
+      if (verifyBtn) {
+        verifyBtn.addEventListener('click', async () => {
+          const pincode = document.getElementById('pincode').value.trim();
+          const errorEl = document.getElementById('pincode-error');
+          const verifiedEl = document.getElementById('pincode-verified');
+          errorEl.classList.remove('visible');
+          verifiedEl.style.display = 'none';
+          verifyBtn.disabled = true;
+          verifyBtn.textContent = 'Verifying...';
+
+          const result = await verifyPincode(pincode);
+          verifyBtn.disabled = false;
+          verifyBtn.textContent = 'Verify Pincode';
+
+          if (result.valid) {
+            checkoutState.pincode = pincode;
+            checkoutState.pincodeData = result.data;
+            verifiedEl.innerHTML = `${getIcon('check')} Verified: ${result.data.area}, ${result.data.city}, ${result.data.state}`;
+            verifiedEl.style.display = 'flex';
+            document.getElementById('address-city').value = result.data.city;
+            document.getElementById('address-state').value = result.data.state;
+            setTimeout(() => setCheckoutStep(2), 600);
+          } else {
+            errorEl.textContent = result.message;
+            errorEl.classList.add('visible');
+          }
+        });
+      }
+
+      const addressBtn = document.getElementById('address-next');
+      if (addressBtn) {
+        addressBtn.addEventListener('click', () => {
+          const fields = ['fullName', 'phone', 'apartment', 'lane'];
+          let valid = true;
+          fields.forEach(f => {
+            const el = document.getElementById('address-' + f);
+            if (!el.value.trim()) { el.style.borderColor = '#c0392b'; valid = false; }
+            else el.style.borderColor = '';
+          });
+          if (!valid) { showToast('Please fill all required fields'); return; }
+
+          checkoutState.address = {
+            fullName: document.getElementById('address-fullName').value.trim(),
+            phone: document.getElementById('address-phone').value.trim(),
+            apartment: document.getElementById('address-apartment').value.trim(),
+            lane: document.getElementById('address-lane').value.trim(),
+            landmark: document.getElementById('address-landmark').value.trim(),
+            city: document.getElementById('address-city').value.trim(),
+            state: document.getElementById('address-state').value.trim()
+          };
+          checkoutState.selectedAddressId = null;
+
+          const user = getCurrentUser();
+          if (user && !isAdmin()) {
+            saveCheckoutAddressToUser(user.email);
+          }
+
+          document.getElementById('review-address').innerHTML = renderReviewAddressHtml();
+          document.getElementById('review-products').innerHTML = renderReviewProducts();
+          setCheckoutStep(3);
+        });
+      }
+
+      const confirmBtn = document.getElementById('confirm-order');
+      if (confirmBtn) {
+        confirmBtn.addEventListener('click', () => {
+          if (!isLoggedIn()) {
+            showToast('Please login to place an order');
+            setTimeout(() => { window.location.href = 'login.html?redirect=cart.html'; }, 1500);
+            return;
+          }
+
+          const user = getCurrentUser();
+          const addressDetails = {
+            ...checkoutState.address,
+            pincode: checkoutState.pincode,
+            area: checkoutState.pincodeData.area,
+            formatted: formatFullAddress(checkoutState)
+          };
+
+          const order = createOrder(user.email, addressDetails);
+          if (order) {
+            document.getElementById('cart-content').innerHTML = `
+              <div class="order-success">
+                ${getIcon('checkCircle')}
+                <h2>Order Confirmed!</h2>
+                <p>Thank you for your purchase. Your handcrafted treasures are on their way.</p>
+                <p class="order-id-display">${order.id}</p>
+                <a href="profile.html#orders" class="btn btn-primary">View My Profile</a>
+                <a href="shop.html" class="btn btn-secondary" style="margin-left:12px;margin-top:12px;">Continue Shopping</a>
+              </div>
+            `;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        });
+      }
+
+      document.querySelectorAll('[data-back-step]').forEach(btn => {
+        btn.addEventListener('click', () => setCheckoutStep(parseInt(btn.dataset.backStep)));
+      });
+    }
+
+    function renderCart() {
+      const container = document.getElementById('cart-content');
+      const cart = getCart();
+
+      if (cart.length === 0) {
+        container.innerHTML = `
+          <div class="cart-empty">
+            <h2>Your cart is empty</h2>
+            <p style="color:#666;margin-bottom:24px;">Discover our handcrafted collection</p>
+            <a href="shop.html" class="btn btn-primary">Continue Shopping</a>
+          </div>
+        `;
+        return;
+      }
+
+      const subtotal = getCartTotal();
+      const shipping = getShippingCost(subtotal);
+      const user = getCurrentUser();
+      const savedAddresses = user && !isAdmin() ? getUserAddresses(user.email) : [];
+
+      container.innerHTML = `
+        <div class="cart-layout">
+          <div class="cart-items">${renderCartItems()}</div>
+          <div class="cart-summary">
+            <div class="checkout-steps">
+              <div class="checkout-step-indicator active" data-step="1"><div class="step-dot">1</div><span>Pincode</span></div>
+              <div class="checkout-step-indicator" data-step="2"><div class="step-dot">2</div><span>Address</span></div>
+              <div class="checkout-step-indicator" data-step="3"><div class="step-dot">3</div><span>Review</span></div>
+            </div>
+
+            <div class="checkout-panel active" id="step-1">
+              ${renderSavedAddressHtml(savedAddresses, checkoutState.selectedAddressId)}
+              <h3 style="font-family:var(--font-display);margin-bottom:16px;">Delivery Pincode</h3>
+              <div class="form-group">
+                <label for="pincode">Pincode</label>
+                <input type="text" id="pincode" placeholder="Enter 6-digit pincode" maxlength="6" inputmode="numeric" value="${checkoutState.pincode}">
+              </div>
+              <p class="form-error" id="pincode-error"></p>
+              <div class="pincode-verified" id="pincode-verified" style="display:none;"></div>
+              <button class="btn btn-primary btn-full" id="verify-pincode" style="margin-top:12px;">Verify Pincode</button>
+            </div>
+
+            <div class="checkout-panel" id="step-2">
+              <h3 style="font-family:var(--font-display);margin-bottom:16px;">Delivery Address</h3>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="address-fullName">Full Name *</label>
+                  <input type="text" id="address-fullName" placeholder="Your name" value="${checkoutState.address.fullName}">
+                </div>
+                <div class="form-group">
+                  <label for="address-phone">Phone *</label>
+                  <input type="tel" id="address-phone" placeholder="10-digit mobile" maxlength="10" value="${checkoutState.address.phone}">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="address-apartment">Apartment / House No. *</label>
+                <input type="text" id="address-apartment" placeholder="Flat, house no., building" value="${checkoutState.address.apartment}">
+              </div>
+              <div class="form-group">
+                <label for="address-lane">Street / Lane / Area *</label>
+                <input type="text" id="address-lane" placeholder="Street, lane, colony" value="${checkoutState.address.lane}">
+              </div>
+              <div class="form-group">
+                <label for="address-landmark">Landmark</label>
+                <input type="text" id="address-landmark" placeholder="Nearby landmark (optional)" value="${checkoutState.address.landmark}">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="address-city">City</label>
+                  <input type="text" id="address-city" readonly value="${checkoutState.address.city}">
+                </div>
+                <div class="form-group">
+                  <label for="address-state">State</label>
+                  <input type="text" id="address-state" readonly value="${checkoutState.address.state}">
+                </div>
+              </div>
+              <button class="btn btn-secondary btn-sm" data-back-step="1" style="margin-bottom:12px;">← Back</button>
+              <button class="btn btn-primary btn-full" id="address-next">Continue to Review</button>
+            </div>
+
+            <div class="checkout-panel" id="step-3">
+              <h3 style="font-family:var(--font-display);margin-bottom:16px;">Review Order</h3>
+              <div class="review-address-box" id="review-address"></div>
+              <div class="review-product-list" id="review-products"></div>
+              <div class="summary-row"><span>Subtotal</span><span>${formatPrice(subtotal)}</span></div>
+              <div class="summary-row"><span>Shipping</span><span>${shipping === 0 ? 'Free' : formatPrice(shipping)}</span></div>
+              <div class="summary-row total"><span>Total</span><span>${formatPrice(subtotal + shipping)}</span></div>
+              <button class="btn btn-secondary btn-sm" data-back-step="2" style="margin:16px 0 12px;">← Back</button>
+              <button class="btn btn-primary btn-full" id="confirm-order">Confirm Order</button>
+              <p style="font-size:0.78rem;color:#999;margin-top:16px;text-align:center;" data-auth="guest">
+                <a href="login.html?redirect=cart.html" style="color:var(--color-accent);">Login</a> or
+                <a href="signup.html" style="color:var(--color-accent);">Sign Up</a> to place your order
+              </p>
+            </div>
+
+            <a href="shop.html" class="btn btn-secondary btn-full" style="margin-top:16px;">Continue Shopping</a>
+          </div>
+        </div>
+      `;
+
+      if (checkoutState.step > 1) setCheckoutStep(checkoutState.step);
+      bindCheckoutEvents();
+      updateAuthUI();
+    }
+
+    document.addEventListener('DOMContentLoaded', renderCart);
+  </script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product — HN Handicraft</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <nav class="nav-left">
+        <a href="index.html">Home</a>
+        <a href="shop.html">Shop</a>
+        <a href="index.html#services">Bulk Gifting</a>
+      </nav>
+      <a href="index.html" class="logo-area">
+        <div class="site-logo">HN <span>Handicraft</span></div>
+      </a>
+      <div class="nav-right">
+        <a href="login.html" class="nav-icon" data-auth="guest" data-icon="user"></a>
+        <a href="profile.html" class="nav-icon" aria-label="My Profile" data-auth="user" style="display:none" data-icon="user"></a>
+        <button type="button" class="nav-icon nav-icon-logout" aria-label="Logout" data-auth="user" style="display:none" data-icon="logout" onclick="logout()"></button>
+        <a href="admin.html" class="nav-icon nav-icon-admin" aria-label="Admin Panel" data-auth="admin" style="display:none" data-icon="admin"></a>
+        <a href="cart.html" class="nav-icon" data-icon="cart">
+          <span class="cart-count" style="display:none">0</span>
+        </a>
+        <button class="mobile-menu-btn" data-icon="menu"></button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="mobile-nav">
+    <button class="mobile-nav-close" data-icon="close"></button>
+    <a href="index.html">Home</a>
+    <a href="shop.html">Shop</a>
+    <a href="cart.html">Cart</a>
+    <a href="login.html" data-auth="guest">Login</a>
+    <a href="profile.html" data-auth="user" style="display:none">My Profile</a>
+    <a href="#" onclick="logout(); return false;" data-auth="user" style="display:none">Logout</a>
+  </nav>
+
+  <div class="container" id="product-container">
+    <p class="breadcrumb" style="padding-top: 24px;">
+      <a href="index.html">Home</a> / <a href="shop.html">Shop</a> / <span id="breadcrumb-name">Product</span>
+    </p>
+    <div class="product-detail" id="product-detail">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+
+  <section class="section section-bg-warm">
+    <div class="container">
+      <div class="section-header">
+        <h2>You May Also Like</h2>
+      </div>
+      <div class="product-grid" id="related-products" data-auto-render="false"></div>
+    </div>
+  </section>
+
+  <footer class="site-footer" data-site-footer></footer>
+
+  <a href="https://wa.me/918273038804" class="whatsapp-fab" data-whatsapp-link target="_blank" rel="noopener" aria-label="WhatsApp" data-icon="whatsapp"></a>
+
+  <script src="js/config.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/content.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      const product = getProductById(id);
+
+      if (!product) {
+        document.getElementById('product-detail').innerHTML =
+          '<div style="text-align:center;padding:80px 0;"><h2>Product not found</h2><a href="shop.html" class="btn btn-primary" style="margin-top:20px;">Back to Shop</a></div>';
+        return;
+      }
+
+      document.title = product.name + ' — HN Handicraft';
+      document.getElementById('breadcrumb-name').textContent = product.name;
+
+      const allImages = getProductImages(product);
+      let activeImage = 0;
+      let quantity = 1;
+
+      const showGalleryNav = allImages.length > 1;
+
+      const thumbsHtml = showGalleryNav ? `
+        <div class="product-gallery-thumbs">
+          ${allImages.map((src, i) => `
+            <button type="button" class="product-gallery-thumb ${i === 0 ? 'active' : ''}" data-index="${i}">
+              <img src="${src}" alt="${product.name} ${i + 1}">
+            </button>
+          `).join('')}
+        </div>
+      ` : '';
+
+      const navHtml = showGalleryNav ? `
+        <button type="button" class="product-gallery-nav product-gallery-prev" aria-label="Previous image">&#8249;</button>
+        <button type="button" class="product-gallery-nav product-gallery-next" aria-label="Next image">&#8250;</button>
+        <span class="product-gallery-counter">1 / ${allImages.length}</span>
+      ` : '';
+
+      document.getElementById('product-detail').innerHTML = `
+        <div class="product-detail-image">
+          <div class="product-gallery-main">
+            <img id="product-main-image" src="${allImages[0]}" alt="${product.name}">
+            ${navHtml}
+          </div>
+          ${thumbsHtml}
+        </div>
+        <div class="product-detail-info">
+          <p class="product-id-label">${product.productCode}</p>
+          <p class="section-label">${getCategoryLabels()[product.category] || product.category}</p>
+          <h1>${product.name}</h1>
+          <div class="price product-price">${renderPriceHtml(product)}</div>
+          <p class="description">${product.description}</p>
+          <p style="font-size:0.85rem;color:#666;margin-bottom:20px;">Tax included. Shipping calculated at checkout.</p>
+
+          <div class="quantity-selector">
+            <label style="font-size:0.82rem;font-weight:500;">Quantity</label>
+            <button id="qty-minus">−</button>
+            <span id="qty-value">1</span>
+            <button id="qty-plus">+</button>
+          </div>
+
+          <div class="product-actions">
+            <button class="btn btn-primary" id="add-to-cart" ${!product.inStock ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}>
+              ${product.inStock ? 'Add to Cart' : 'Sold Out'}
+            </button>
+            <button class="btn btn-dark" id="buy-now" ${!product.inStock ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}>
+              Buy Now
+            </button>
+          </div>
+
+          <div class="product-meta">
+            <p><strong>Category:</strong> ${getCategoryLabels()[product.category] || product.category}</p>
+            <p><strong>Product ID:</strong> ${product.productCode}</p>
+            <p><strong>Availability:</strong> ${product.inStock ? 'In Stock' : 'Sold Out'}</p>
+            <p><strong>Craft:</strong> Handcrafted in India</p>
+          </div>
+        </div>
+      `;
+
+      function goToImage(index) {
+        activeImage = (index + allImages.length) % allImages.length;
+        document.getElementById('product-main-image').src = allImages[activeImage];
+        document.querySelectorAll('.product-gallery-thumb').forEach((b, i) => {
+          b.classList.toggle('active', i === activeImage);
+        });
+        const counter = document.querySelector('.product-gallery-counter');
+        if (counter) counter.textContent = (activeImage + 1) + ' / ' + allImages.length;
+      }
+
+      document.querySelectorAll('.product-gallery-thumb').forEach(btn => {
+        btn.addEventListener('click', () => goToImage(parseInt(btn.dataset.index, 10)));
+      });
+
+      const prevBtn = document.querySelector('.product-gallery-prev');
+      const nextBtn = document.querySelector('.product-gallery-next');
+      if (prevBtn) prevBtn.addEventListener('click', () => goToImage(activeImage - 1));
+      if (nextBtn) nextBtn.addEventListener('click', () => goToImage(activeImage + 1));
+
+      document.getElementById('qty-minus').addEventListener('click', () => {
+        if (quantity > 1) { quantity--; document.getElementById('qty-value').textContent = quantity; }
+      });
+      document.getElementById('qty-plus').addEventListener('click', () => {
+        quantity++; document.getElementById('qty-value').textContent = quantity;
+      });
+
+      if (product.inStock) {
+        document.getElementById('add-to-cart').addEventListener('click', () => {
+          addToCart(product.id, quantity);
+        });
+        document.getElementById('buy-now').addEventListener('click', () => {
+          addToCart(product.id, quantity);
+          window.location.href = 'cart.html';
+        });
+      }
+
+      const related = getProductsByCategory(product.category).filter(p => p.id !== product.id).slice(0, 4);
+      const relatedGrid = document.getElementById('related-products');
+      relatedGrid.innerHTML = related.map(renderProductCard).join('');
+      relatedGrid.querySelectorAll('[data-add-cart]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          addToCart(btn.dataset.addCart);
+        });
+      });
+    });
+  </script>
+</body>
+</html>

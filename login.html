@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login — HN Handicraft</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <nav class="nav-left">
+        <a href="shop.html">Shop</a>
+        <a href="index.html">Home</a>
+      </nav>
+      <a href="index.html" class="logo-area">
+        <div class="site-logo">HN <span>Handicraft</span></div>
+      </a>
+      <div class="nav-right">
+        <a href="admin.html" class="nav-icon nav-icon-admin" aria-label="Admin Panel" data-auth="admin" style="display:none" data-icon="admin"></a>
+        <a href="cart.html" class="nav-icon" data-icon="cart">
+          <span class="cart-count" style="display:none">0</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="auth-main">
+    <div class="auth-card">
+      <h1>Welcome Back</h1>
+      <p class="subtitle">Login to track your orders and manage your account</p>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" placeholder="you@example.com" required>
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Your password" required>
+        </div>
+        <p class="form-error" id="login-error"></p>
+        <button type="submit" class="btn btn-primary btn-full">Login</button>
+      </form>
+
+      <p class="auth-switch">
+        Don't have an account? <a href="signup.html">Sign Up</a>
+      </p>
+    </div>
+  </main>
+
+  <footer class="site-footer" data-site-footer></footer>
+
+  <a href="https://wa.me/918273038804" class="whatsapp-fab" data-whatsapp-link target="_blank" rel="noopener" aria-label="WhatsApp" data-icon="whatsapp"></a>
+
+  <script src="js/config.js"></script>
+  <script src="js/products.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/cart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      updateCartCount();
+      updateAuthUI();
+
+      const params = new URLSearchParams(window.location.search);
+      const wantsAdmin = params.get('redirect') === 'admin.html';
+
+      if (isAdmin()) {
+        window.location.replace('admin.html');
+        return;
+      }
+
+      const sessionEmail = localStorage.getItem('hc_session');
+      if (sessionEmail && sessionEmail.toLowerCase() === 'admin@gmail.com') {
+        localStorage.removeItem('hc_session');
+      }
+
+      if (isLoggedIn() && !wantsAdmin) {
+        window.location.replace(params.get('redirect') || 'index.html');
+        return;
+      }
+
+      if (isLoggedIn() && wantsAdmin) {
+        localStorage.removeItem('hc_session');
+      }
+
+      document.getElementById('login-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const errorEl = document.getElementById('login-error');
+
+        const result = login(email, password);
+        if (result.success) {
+          redirectAfterLogin(result.isAdmin, result.user);
+        } else {
+          errorEl.textContent = result.message;
+          errorEl.classList.add('visible');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

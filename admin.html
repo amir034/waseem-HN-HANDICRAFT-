@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — HN Handicraft</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="admin-page">
+
+  <aside class="admin-sidebar">
+    <div class="admin-brand">
+      <h2>HN Handicraft</h2>
+      <span>Admin Panel</span>
+    </div>
+    <nav class="admin-nav">
+      <button class="admin-tab active" data-tab="products">Products</button>
+      <button class="admin-tab" data-tab="orders">Orders</button>
+      <button class="admin-tab" data-tab="shipment">Shipment</button>
+      <button class="admin-tab" data-tab="delivered">Delivered</button>
+      <button class="admin-tab" data-tab="users">Users</button>
+      <button class="admin-tab" data-tab="hero">Hero Banner</button>
+      <button class="admin-tab" data-tab="artisans">Artisans</button>
+      <button class="admin-tab" data-tab="announcements">Announcements</button>
+    </nav>
+    <button class="admin-logout-btn" id="admin-logout">Logout</button>
+  </aside>
+
+  <main class="admin-main">
+    <header class="admin-topbar">
+      <div class="admin-search-wrap">
+        <input type="search" id="admin-search" placeholder="Search orders, products, users, phone, address...">
+      </div>
+      <button class="btn btn-primary btn-sm" id="add-category-btn">+ Add Category</button>
+    </header>
+
+    <div class="admin-stats">
+      <div class="admin-stat-card">
+        <span class="admin-stat-num" id="stat-users">0</span>
+        <span class="admin-stat-label">Registered Users</span>
+      </div>
+      <div class="admin-stat-card">
+        <span class="admin-stat-num" id="stat-logged-in">0</span>
+        <span class="admin-stat-label">Users with Logins</span>
+      </div>
+      <div class="admin-stat-card">
+        <span class="admin-stat-num" id="stat-orders">0</span>
+        <span class="admin-stat-label">Total Orders</span>
+      </div>
+      <div class="admin-stat-card">
+        <span class="admin-stat-num" id="stat-products">0</span>
+        <span class="admin-stat-label">Total Products</span>
+      </div>
+      <div class="admin-stat-card admin-stat-order-only" style="display:none">
+        <span class="admin-stat-num" id="stat-received">0</span>
+        <span class="admin-stat-label">Orders Received</span>
+      </div>
+      <div class="admin-stat-card admin-stat-order-only" style="display:none">
+        <span class="admin-stat-num" id="stat-shipping">0</span>
+        <span class="admin-stat-label">Shipping</span>
+      </div>
+      <div class="admin-stat-card admin-stat-order-only" style="display:none">
+        <span class="admin-stat-num" id="stat-delivered">0</span>
+        <span class="admin-stat-label">Delivered</span>
+      </div>
+    </div>
+
+    <div id="admin-search-results" class="admin-search-results"></div>
+
+    <div class="admin-panel active" id="panel-products">
+      <div id="admin-products"></div>
+    </div>
+
+    <div class="admin-panel" id="panel-orders">
+      <div class="admin-panel-heading">
+        <h2>Orders Received</h2>
+        <p>New and pending orders awaiting dispatch</p>
+      </div>
+      <div id="admin-orders"></div>
+    </div>
+
+    <div class="admin-panel" id="panel-shipment">
+      <div class="admin-panel-heading">
+        <h2>Shipment</h2>
+        <p>Orders currently out for delivery</p>
+      </div>
+      <div id="admin-shipment"></div>
+    </div>
+
+    <div class="admin-panel" id="panel-delivered">
+      <div class="admin-panel-heading">
+        <h2>Delivered</h2>
+        <p>Successfully completed orders</p>
+      </div>
+      <div id="admin-delivered"></div>
+    </div>
+
+    <div class="admin-panel" id="panel-users">
+      <div id="admin-users"></div>
+      <div id="user-detail-panel" class="user-detail-panel"></div>
+    </div>
+
+    <div class="admin-panel" id="panel-hero">
+      <div class="admin-panel-heading">
+        <h2>Homepage Hero Banner</h2>
+        <p>Manage the large slideshow at the top of the homepage — change images, headlines, and buttons anytime.</p>
+      </div>
+      <div id="admin-hero-content"></div>
+    </div>
+
+    <div class="admin-panel" id="panel-artisans">
+      <div class="admin-panel-heading">
+        <h2>Our Artisans Section</h2>
+        <p>Add artisan photos and profiles, then customize the section headings shown on the homepage.</p>
+      </div>
+      <div id="admin-artisans-content"></div>
+    </div>
+
+    <div class="admin-panel" id="panel-announcements">
+      <div class="admin-panel-heading">
+        <h2>Announcements &amp; Offers</h2>
+        <p>Manage the scrolling bar below the header and the offer popup shown to visitors.</p>
+      </div>
+      <div id="admin-announcements-content"></div>
+    </div>
+  </main>
+
+  <!-- Add Category Modal -->
+  <div class="admin-modal" id="category-modal">
+    <div class="admin-modal-content">
+      <button class="admin-modal-close" data-close-modal>&times;</button>
+      <h3>Add New Category</h3>
+      <form id="category-form">
+        <div class="form-group">
+          <label for="category-name">Category Name</label>
+          <input type="text" id="category-name" placeholder="e.g. Glass Items" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Create Category</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Product Wizard -->
+  <div class="admin-modal" id="product-wizard-modal">
+    <div class="admin-modal-content admin-modal-lg">
+      <button class="admin-modal-close" data-close-modal>&times;</button>
+      <h3>Add New Product <span class="wizard-step-label">Step <span id="wizard-step">1</span>/2</span></h3>
+
+      <div class="wizard-panel active" id="wizard-panel-1">
+        <p class="wizard-hint">Upload a product photo or paste an image URL.</p>
+        <div class="form-group">
+          <label>Upload Photo</label>
+          <input type="file" id="wizard-image-file" accept="image/*">
+        </div>
+        <div class="form-group">
+          <label for="wizard-image-url">Or Image URL</label>
+          <input type="url" id="wizard-image-url" placeholder="https://...">
+        </div>
+        <div id="wizard-image-preview" class="admin-image-preview"></div>
+        <div class="form-group" style="margin-top:16px;">
+          <label>More Product Photos <span class="wizard-hint-inline">(up to 4 total, auto-cropped)</span></label>
+          <input type="file" id="wizard-extra-images" accept="image/*" multiple>
+          <div id="wizard-extra-gallery" class="admin-extra-gallery"></div>
+        </div>
+      </div>
+
+      <div class="wizard-panel" id="wizard-panel-2">
+        <div class="form-group">
+          <label for="wizard-name">Product Title / Caption</label>
+          <input type="text" id="wizard-name" required>
+        </div>
+        <div class="form-group">
+          <label for="wizard-description">Description</label>
+          <textarea id="wizard-description" rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="wizard-price">Price (Rs.)</label>
+            <input type="number" id="wizard-price" min="1" required>
+          </div>
+          <div class="form-group">
+            <label for="wizard-offer">Offer Price (optional)</label>
+            <input type="number" id="wizard-offer" min="1" placeholder="Optional">
+          </div>
+        </div>
+        <label class="admin-checkbox">
+          <input type="checkbox" id="wizard-sold-out"> Mark as Sold Out
+        </label>
+      </div>
+
+      <div class="wizard-actions">
+        <button class="btn btn-outline-accent" id="wizard-back" style="display:none">Back</button>
+        <button class="btn btn-primary" id="wizard-next">Next</button>
+        <button class="btn btn-primary" id="wizard-save" style="display:none">Save Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Product Modal -->
+  <div class="admin-modal" id="edit-modal">
+    <div class="admin-modal-content admin-modal-lg">
+      <button class="admin-modal-close" data-close-modal>&times;</button>
+      <h3>Edit Product <span class="admin-product-code" id="edit-code"></span></h3>
+      <form id="edit-form">
+        <div class="form-group">
+          <label>Product Photos <span class="wizard-hint-inline">(up to 4 images)</span></label>
+          <p class="wizard-hint">Main photo above. Add more below — click any thumbnail to set it as the main image.</p>
+          <div id="edit-image-preview" class="admin-image-preview"></div>
+          <div class="form-group" style="margin-top:12px;">
+            <label>Add / Change Main Photo</label>
+            <input type="file" id="edit-image-file" accept="image/*">
+          </div>
+          <div class="form-group">
+            <label for="edit-image-url">Or Main Image URL</label>
+            <input type="url" id="edit-image-url" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label>Add More Photos</label>
+            <input type="file" id="edit-extra-images" accept="image/*" multiple>
+          </div>
+          <p class="admin-photo-count" id="edit-photo-count"></p>
+          <div id="edit-extra-gallery" class="admin-extra-gallery"></div>
+        </div>
+        <div class="form-group">
+          <label for="edit-name">Title / Caption</label>
+          <input type="text" id="edit-name" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-description">Description</label>
+          <textarea id="edit-description" rows="3"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-price">Price (Rs.)</label>
+            <input type="number" id="edit-price" min="1" required>
+          </div>
+          <div class="form-group">
+            <label for="edit-offer">Offer Price (optional)</label>
+            <input type="number" id="edit-offer" min="1" placeholder="Optional">
+          </div>
+        </div>
+        <label class="admin-checkbox">
+          <input type="checkbox" id="edit-sold-out"> Mark as Sold Out
+        </label>
+        <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
+        <button type="button" class="btn btn-outline-accent btn-full admin-delete-product-btn" id="edit-delete-btn" style="margin-top:12px;">Delete Product</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Artisan Modal -->
+  <div class="admin-modal" id="artisan-modal">
+    <div class="admin-modal-content admin-modal-lg">
+      <button class="admin-modal-close" data-close-modal>&times;</button>
+      <h3 id="artisan-modal-title">Add Artisan</h3>
+      <form id="artisan-form">
+        <div id="artisan-image-preview" class="admin-image-preview"></div>
+        <div class="form-group">
+          <label>Photo</label>
+          <input type="file" id="artisan-image-file" accept="image/*">
+        </div>
+        <div class="form-group">
+          <label for="artisan-image-url">Or Image URL</label>
+          <input type="url" id="artisan-image-url" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label for="artisan-name">Name *</label>
+          <input type="text" id="artisan-name" required placeholder="e.g. Meera Ben">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="artisan-craft">Craft *</label>
+            <input type="text" id="artisan-craft" required placeholder="e.g. Kala Cotton Weaving">
+          </div>
+          <div class="form-group">
+            <label for="artisan-location">Location *</label>
+            <input type="text" id="artisan-location" required placeholder="e.g. Kutch, Gujarat">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="artisan-description">Bio / Description *</label>
+          <textarea id="artisan-description" rows="4" required placeholder="Tell their story..."></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full">Save Artisan</button>
+        <button type="button" class="btn btn-outline-accent btn-full admin-delete-product-btn" id="artisan-delete-btn" style="margin-top:12px;display:none;">Delete Artisan</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/products.js"></script>
+  <script src="js/image-utils.js"></script>
+  <script src="js/content.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/cart.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
