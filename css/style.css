@@ -2572,8 +2572,6 @@ body > .mobile-nav:not(.open) {
     height: min(75vh, 640px);
     min-height: 480px;
   }
-
-  /* Compact header — prevents nav overflow when resizing */
   :root {
     --header-height: 80px;
   }
@@ -2695,42 +2693,58 @@ body > .mobile-nav:not(.open) {
     gap: 28px;
   }
 
-  /* Hero — original tall banner size */
+  /* Hero — compact mobile banner (~half viewport, like reference) */
   .hero-slider {
-    height: min(70vh, 520px);
-    min-height: 420px;
-    max-height: none;
+    height: min(50dvh, 380px);
+    min-height: 260px;
+    max-height: 400px;
+  }
+
+  .hero-overlay {
+    background: linear-gradient(
+      180deg,
+      rgba(15, 35, 30, 0.55) 0%,
+      rgba(15, 35, 30, 0.45) 45%,
+      rgba(15, 35, 30, 0.72) 100%
+    );
   }
 
   .hero-content {
-    padding: 0 20px;
+    padding: 0 18px;
+    max-width: 100%;
   }
 
   .hero-brand {
-    font-size: 0.68rem;
-    letter-spacing: 0.18em;
-    margin-bottom: 12px;
-    padding-bottom: 8px;
+    font-size: 0.6rem;
+    letter-spacing: 0.16em;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
   }
 
   .hero-content h1 {
-    font-size: clamp(1.55rem, 7vw, 2.1rem);
-    margin-bottom: 14px;
+    font-size: clamp(1.3rem, 5.2vw, 1.75rem);
+    margin-bottom: 8px;
+    line-height: 1.22;
   }
 
   .hero-content p {
-    font-size: 0.88rem;
-    margin-bottom: 22px;
-    line-height: 1.55;
+    font-size: 0.78rem;
+    margin-bottom: 14px;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .hero-content .btn {
-    padding: 12px 24px;
-    font-size: 0.75rem;
+    padding: 9px 20px;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
   }
 
   .hero-dots {
-    bottom: 16px;
+    bottom: 12px;
   }
 
   .hero-dot {
@@ -2921,6 +2935,33 @@ body > .mobile-nav:not(.open) {
 
   .section {
     padding: 48px 0;
+  }
+
+  .hero-slider {
+    height: min(48dvh, 340px);
+    min-height: 240px;
+    max-height: 360px;
+  }
+
+  .hero-content h1 {
+    font-size: clamp(1.2rem, 5vw, 1.55rem);
+    margin-bottom: 6px;
+  }
+
+  .hero-content p {
+    font-size: 0.72rem;
+    margin-bottom: 12px;
+    -webkit-line-clamp: 2;
+  }
+
+  .hero-content .btn {
+    padding: 8px 18px;
+    font-size: 0.64rem;
+  }
+
+  .hero-brand {
+    font-size: 0.55rem;
+    margin-bottom: 6px;
   }
 
   .category-grid,
