@@ -4,8 +4,12 @@ function initHeroSlider() {
   if (slides.length === 0) return;
 
   let current = 0;
-  slides[current].classList.add('active');
-  if (dots[current]) dots[current].classList.add('active');
+  if (!slides[current].classList.contains('active')) {
+    slides[current].classList.add('active');
+  }
+  if (dots[current] && !dots[current].classList.contains('active')) {
+    dots[current].classList.add('active');
+  }
   syncHeroVideos(slides, current);
 
   function syncHeroVideos(slideList, activeIndex) {
@@ -111,11 +115,20 @@ function initMobileMenu() {
 
   if (!btn || !nav) return;
 
-  btn.addEventListener('click', () => nav.classList.add('open'));
-  if (close) close.addEventListener('click', () => nav.classList.remove('open'));
+  btn.addEventListener('click', () => {
+    nav.classList.add('open');
+    nav.setAttribute('aria-hidden', 'false');
+  });
+  if (close) close.addEventListener('click', () => {
+    nav.classList.remove('open');
+    nav.setAttribute('aria-hidden', 'true');
+  });
 
   nav.querySelectorAll('a').forEach(link => {
-    link.addEventListener('click', () => nav.classList.remove('open'));
+    link.addEventListener('click', () => {
+      nav.classList.remove('open');
+      nav.setAttribute('aria-hidden', 'true');
+    });
   });
 }
 

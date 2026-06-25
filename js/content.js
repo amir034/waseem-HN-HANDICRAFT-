@@ -203,7 +203,7 @@ function moveHeroSlide(id, direction) {
   saveHeroSlides(slides);
 }
 
-function renderHeroSlideHtml(slide) {
+function renderHeroSlideHtml(slide, isFirst) {
   const subtitle = slide.subtitle
     ? `<p>${escapeHtml(slide.subtitle)}</p>`
     : '';
@@ -211,7 +211,7 @@ function renderHeroSlideHtml(slide) {
     ? `<a href="${escapeAttr(slide.buttonLink || 'shop.html')}" class="btn btn-primary">${escapeHtml(slide.buttonText)}</a>`
     : '';
   return `
-    <div class="hero-slide" data-hero-id="${escapeAttr(slide.id)}">
+    <div class="hero-slide${isFirst ? ' active' : ''}" data-hero-id="${escapeAttr(slide.id)}">
       <div class="hero-slide-bg" style="background-image: url('${escapeAttr(slide.image)}')"></div>
       <div class="hero-overlay"></div>
       <div class="hero-content">
@@ -235,7 +235,7 @@ function renderHeroSection() {
     `<button class="hero-dot${i === 0 ? ' active' : ''}" aria-label="Slide ${i + 1}"></button>`
   ).join('');
 
-  slider.innerHTML = slides.map(renderHeroSlideHtml).join('') +
+  slider.innerHTML = slides.map((slide, i) => renderHeroSlideHtml(slide, i === 0)).join('') +
     `<div class="hero-dots">${dotsHtml}</div>`;
   slider.classList.add('hero-ready');
 }

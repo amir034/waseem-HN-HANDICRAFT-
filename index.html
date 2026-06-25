@@ -2,12 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>HN Handicraft — Authentic Indian Handicraft</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=7">
+  <style>
+    html, body { width: 100%; max-width: 100%; overflow-x: hidden; overflow-x: clip; margin: 0; padding: 0; }
+    .site-header, .announcement-ticker-wrap, .hero-slider, .section, .site-footer { width: 100%; max-width: 100%; overflow-x: hidden; }
+    .mobile-nav { display: none !important; position: fixed !important; inset: 0; z-index: 2000; pointer-events: none; }
+    .mobile-nav.open { display: flex !important; pointer-events: auto; }
+    @media (max-width: 1024px) {
+      .nav-hide-mobile { display: none !important; }
+      .header-inner { display: flex !important; justify-content: space-between !important; align-items: center !important; grid-template-columns: unset !important; max-width: 100% !important; }
+      .nav-left { display: none !important; }
+      .logo-area { justify-content: flex-start !important; min-width: 0 !important; }
+      .mobile-menu-btn { display: flex !important; }
+    }
+  </style>
 </head>
 <body>
 
@@ -41,7 +54,7 @@
       </a>
 
       <div class="nav-right">
-        <a href="shop.html" class="nav-icon" aria-label="Search" data-icon="search"></a>
+        <a href="shop.html" class="nav-icon nav-hide-mobile" aria-label="Search" data-icon="search"></a>
         <a href="login.html" class="nav-icon" aria-label="Account" data-auth="guest" data-icon="user"></a>
         <a href="profile.html" class="nav-icon" aria-label="My Profile" data-auth="user" style="display:none" data-icon="user"></a>
         <button type="button" class="nav-icon nav-icon-logout" aria-label="Logout" data-auth="user" style="display:none" data-icon="logout" onclick="logout()"></button>
@@ -54,29 +67,24 @@
     </div>
   </header>
 
-  <!-- Mobile Nav -->
-  <nav class="mobile-nav">
-    <button class="mobile-nav-close" aria-label="Close" data-icon="close"></button>
-    <a href="index.html">Home</a>
-    <a href="shop.html">Shop All</a>
-    <a href="#about">Our Story</a>
-    <a href="#philosophy">Philosophy</a>
-    <a href="#artisans">Our Artisans</a>
-    <a href="shop.html?category=fibers">Fibers</a>
-    <a href="shop.html?category=metal">Metal</a>
-    <a href="shop.html?category=wooden">Wooden</a>
-    <a href="#services">Bulk Gifting</a>
-    <a href="profile.html" data-auth="user" style="display:none">My Profile</a>
-    <a href="login.html" data-auth="guest">Login</a>
-    <a href="signup.html" data-auth="guest">Sign Up</a>
-    <a href="#" onclick="logout(); return false;" data-auth="user" style="display:none">Logout</a>
-    <a href="cart.html">Cart</a>
-  </nav>
-
   <div id="welcome-banner" class="welcome-banner" hidden></div>
 
-  <!-- Hero Slider (content loaded from Admin → Hero Banner) -->
-  <section class="hero-slider"></section>
+  <!-- Hero Slider -->
+  <section class="hero-slider" id="hero-slider">
+    <div class="hero-slide active">
+      <div class="hero-slide-bg" style="background-image: url('assets/images/handicraft/hero-weaving-rug.jpg')"></div>
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <span class="hero-brand">HN Handicraft</span>
+        <h1>Celebrate India's Rich Craft Heritage</h1>
+        <p>Every piece tells a story of generations of artisanal mastery</p>
+        <a href="#categories" class="btn btn-primary">Explore Crafts</a>
+      </div>
+    </div>
+    <div class="hero-dots">
+      <button class="hero-dot active" aria-label="Slide 1"></button>
+    </div>
+  </section>
 
   <!-- Our Story -->
   <section class="section section-bg-cream about-section" id="about">
@@ -304,6 +312,24 @@
   <footer class="site-footer" data-site-footer></footer>
 
   <a href="https://wa.me/918273038804" class="whatsapp-fab" data-whatsapp-link target="_blank" rel="noopener" aria-label="WhatsApp" data-icon="whatsapp"></a>
+
+  <nav class="mobile-nav" aria-hidden="true">
+    <button class="mobile-nav-close" aria-label="Close" data-icon="close"></button>
+    <a href="index.html">Home</a>
+    <a href="shop.html">Shop All</a>
+    <a href="#about">Our Story</a>
+    <a href="#philosophy">Philosophy</a>
+    <a href="#artisans">Our Artisans</a>
+    <a href="shop.html?category=fibers">Fibers</a>
+    <a href="shop.html?category=metal">Metal</a>
+    <a href="shop.html?category=wooden">Wooden</a>
+    <a href="#services">Bulk Gifting</a>
+    <a href="profile.html" data-auth="user" style="display:none">My Profile</a>
+    <a href="login.html" data-auth="guest">Login</a>
+    <a href="signup.html" data-auth="guest">Sign Up</a>
+    <a href="#" onclick="logout(); return false;" data-auth="user" style="display:none">Logout</a>
+    <a href="cart.html">Cart</a>
+  </nav>
 
   <script src="js/config.js"></script>
   <script src="js/products.js"></script>

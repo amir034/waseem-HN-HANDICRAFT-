@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>Cart — HN Handicraft</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=7">
 </head>
 <body>
 
@@ -33,15 +33,6 @@
     </div>
   </header>
 
-  <nav class="mobile-nav">
-    <button class="mobile-nav-close" aria-label="Close" data-icon="close"></button>
-    <a href="index.html">Home</a>
-    <a href="shop.html">Shop</a>
-    <a href="cart.html">Cart</a>
-    <a href="login.html" data-auth="guest">Login</a>
-    <a href="profile.html" data-auth="user" style="display:none">My Profile</a>
-  </nav>
-
   <div class="page-hero">
     <div class="container">
       <p class="breadcrumb"><a href="index.html">Home</a> / Cart</p>
@@ -54,6 +45,15 @@
   <footer class="site-footer" data-site-footer></footer>
 
   <a href="https://wa.me/918273038804" class="whatsapp-fab" data-whatsapp-link target="_blank" rel="noopener" aria-label="WhatsApp" data-icon="whatsapp"></a>
+
+  <nav class="mobile-nav" aria-hidden="true">
+    <button class="mobile-nav-close" aria-label="Close" data-icon="close"></button>
+    <a href="index.html">Home</a>
+    <a href="shop.html">Shop</a>
+    <a href="cart.html">Cart</a>
+    <a href="login.html" data-auth="guest">Login</a>
+    <a href="profile.html" data-auth="user" style="display:none">My Profile</a>
+  </nav>
 
   <script src="js/config.js"></script>
   <script src="js/products.js"></script>
