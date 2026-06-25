@@ -72,7 +72,7 @@ module.exports = async (req, res) => {
       res,
       {
         success: false,
-        message: 'Account could not be saved on the server. Sign up works in this browser only until Vercel KV is added.'
+        message: 'Connect Upstash Redis in Vercel (Storage → Redis) and redeploy so accounts work on every device.'
       },
       503
     );

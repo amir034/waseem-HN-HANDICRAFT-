@@ -92,13 +92,27 @@ async function isApiAvailable() {
   try {
     const res = await fetchWithTimeout('/api/health', { method: 'GET' });
     if (res.ok) {
+      const data = await res.json();
       window.HC_API_ENABLED = true;
+      window.HC_API_PERSIST = data.persist === true;
       return true;
     }
   } catch {
     /* no shared server */
   }
   return false;
+}
+
+async function syncLocalOnlyUsersToServer(serverUsers) {
+  if (!window.HC_API_PERSIST) return;
+  const serverEmails = new Set((serverUsers || []).map(u => normalizeEmail(u.email)));
+  const localOnly = getUsers().filter(u => {
+    const email = normalizeEmail(u.email);
+    return email && !isAdminEmail(email) && !serverEmails.has(email);
+  });
+  if (!localOnly.length) return;
+  const merged = [...(serverUsers || []), ...localOnly];
+  await syncUsersToServer(merged);
 }
 
 function mergeUsersFromServer(serverUsers) {
@@ -131,7 +145,9 @@ async function initAuthSync() {
   try {
     const res = await fetchWithTimeout('/api/health');
     if (!res.ok) return;
+    const health = await res.json();
     window.HC_API_ENABLED = true;
+    window.HC_API_PERSIST = health.persist === true;
 
     const usersRes = await fetchWithTimeout('/api/users');
     if (!usersRes.ok) return;
@@ -140,16 +156,18 @@ async function initAuthSync() {
     const serverUsers = data.users || [];
     const localUsers = getUsers();
 
-    if (serverUsers.length === 0 && localUsers.length > 0) {
+    if (serverUsers.length === 0 && localUsers.length > 0 && window.HC_API_PERSIST) {
       await syncUsersToServer(localUsers);
       return;
     }
 
     if (serverUsers.length > 0) {
       mergeUsersFromServer(serverUsers);
+      await syncLocalOnlyUsersToServer(serverUsers);
     }
   } catch {
     window.HC_API_ENABLED = false;
+    window.HC_API_PERSIST = false;
   }
 }
 
@@ -332,6 +350,12 @@ async function login(email, password) {
     return {
       success: false,
       message: local.message + '. ' + SERVER_TIP + '.'
+    };
+  }
+  if (!local.success && window.HC_API_ENABLED && !window.HC_API_PERSIST) {
+    return {
+      success: false,
+      message: 'Account not found on this device. Connect Upstash Redis in your Vercel project (Storage → Redis), redeploy, then sign up again to use login on all devices.'
     };
   }
   return local;
