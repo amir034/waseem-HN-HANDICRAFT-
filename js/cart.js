@@ -2,13 +2,45 @@ const CART_KEY = 'hc_cart';
 const ORDERS_KEY = 'hc_orders';
 const ORDER_COUNTER_KEY = 'hc_order_counter';
 
+function getCartStorageKey() {
+  if (typeof isCustomerLoggedIn === 'function' && !isCustomerLoggedIn()) return null;
+  const email = localStorage.getItem('hc_session');
+  if (!email) return null;
+  return 'hc_cart_' + email.trim().toLowerCase();
+}
+
 function getCart() {
-  return JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+  const key = getCartStorageKey();
+  if (!key) return [];
+  return JSON.parse(localStorage.getItem(key) || '[]');
 }
 
 function saveCart(cart) {
-  localStorage.setItem(CART_KEY, JSON.stringify(cart));
+  const key = getCartStorageKey();
+  if (!key) return;
+  localStorage.setItem(key, JSON.stringify(cart));
   updateCartCount();
+}
+
+function migrateLegacyCart(email) {
+  const normalized = (email || '').trim().toLowerCase();
+  if (!normalized) return;
+  const legacyRaw = localStorage.getItem(CART_KEY);
+  if (!legacyRaw) return;
+
+  const legacyCart = JSON.parse(legacyRaw || '[]');
+  localStorage.removeItem(CART_KEY);
+
+  if (!legacyCart.length) return;
+
+  const userKey = 'hc_cart_' + normalized;
+  const userCart = JSON.parse(localStorage.getItem(userKey) || '[]');
+  legacyCart.forEach(item => {
+    const existing = userCart.find(i => i.productId === item.productId);
+    if (existing) existing.quantity += item.quantity;
+    else userCart.push(item);
+  });
+  localStorage.setItem(userKey, JSON.stringify(userCart));
 }
 
 function addToCart(productId, quantity = 1) {
@@ -55,7 +87,8 @@ function updateCartQuantity(productId, quantity) {
 }
 
 function clearCart() {
-  localStorage.removeItem(CART_KEY);
+  const key = getCartStorageKey();
+  if (key) localStorage.removeItem(key);
   updateCartCount();
 }
 
@@ -77,6 +110,14 @@ function updateCartCount() {
     el.style.display = count > 0 ? 'flex' : 'none';
   });
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof isCustomerLoggedIn === 'function' && isCustomerLoggedIn()) {
+    migrateLegacyCart(localStorage.getItem('hc_session'));
+  } else {
+    updateCartCount();
+  }
+});
 
 function generateOrderId() {
   const counter = parseInt(localStorage.getItem(ORDER_COUNTER_KEY) || '0', 10) + 1;

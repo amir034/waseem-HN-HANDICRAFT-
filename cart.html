@@ -247,7 +247,15 @@
       const cart = getCart();
 
       if (cart.length === 0) {
-        container.innerHTML = `
+        const guest = typeof isCustomerLoggedIn === 'function' && !isCustomerLoggedIn();
+        container.innerHTML = guest ? `
+          <div class="cart-empty">
+            <h2>Login to view your cart</h2>
+            <p style="color:#666;margin-bottom:24px;">Create an account or log in to add items and checkout.</p>
+            <a href="login.html?redirect=cart.html" class="btn btn-primary">Login</a>
+            <a href="signup.html" class="btn btn-outline-accent" style="margin-left:12px;">Create Account</a>
+          </div>
+        ` : `
           <div class="cart-empty">
             <h2>Your cart is empty</h2>
             <p style="color:#666;margin-bottom:24px;">Discover our handcrafted collection</p>

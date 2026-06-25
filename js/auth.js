@@ -163,6 +163,8 @@ function signupLocal(name, email, password) {
   saveUsers(users);
   localStorage.setItem(SESSION_KEY, email);
   localStorage.removeItem(ADMIN_SESSION_KEY);
+  if (typeof migrateLegacyCart === 'function') migrateLegacyCart(email);
+  if (typeof updateCartCount === 'function') updateCartCount();
   return { success: true };
 }
 
@@ -180,6 +182,8 @@ async function signup(name, email, password) {
         upsertLocalUser(data.user, password);
         localStorage.setItem(SESSION_KEY, email);
         localStorage.removeItem(ADMIN_SESSION_KEY);
+        if (typeof migrateLegacyCart === 'function') migrateLegacyCart(email);
+        if (typeof updateCartCount === 'function') updateCartCount();
         return { success: true };
       }
       if (!res.ok) {
@@ -201,6 +205,8 @@ function loginLocal(email, password) {
   localStorage.setItem(SESSION_KEY, email);
   localStorage.removeItem(ADMIN_SESSION_KEY);
   recordUserLogin(email);
+  if (typeof migrateLegacyCart === 'function') migrateLegacyCart(email);
+  if (typeof updateCartCount === 'function') updateCartCount();
   return { success: true, user, isAdmin: false };
 }
 
@@ -230,6 +236,8 @@ async function login(email, password) {
         localStorage.setItem(SESSION_KEY, email);
         localStorage.removeItem(ADMIN_SESSION_KEY);
         recordUserLogin(email);
+        if (typeof migrateLegacyCart === 'function') migrateLegacyCart(email);
+        if (typeof updateCartCount === 'function') updateCartCount();
         return { success: true, user, isAdmin: false };
       }
       if (!res.ok) {
