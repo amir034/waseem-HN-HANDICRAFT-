@@ -4,7 +4,7 @@ const ADMIN_SESSION_KEY = 'hc_admin_session';
 const ADMIN_EMAIL = 'admin@gmail.com';
 const ADMIN_PASSWORD = '123321';
 const API_TIMEOUT_MS = 4000;
-const SERVER_TIP = 'For login on all devices, double-click start-server.bat and open http://localhost:8080';
+const SERVER_TIP = 'Open this site from your Vercel URL or run a local web server — login does not work when opening HTML files directly';
 
 let authSyncReady = null;
 
@@ -328,7 +328,7 @@ async function login(email, password) {
   }
 
   const local = loginLocal(email, password);
-  if (!local.success && (isFileProtocol() || !(await isApiAvailable()))) {
+  if (!local.success && isFileProtocol()) {
     return {
       success: false,
       message: local.message + '. ' + SERVER_TIP + '.'
