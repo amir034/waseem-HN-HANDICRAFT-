@@ -4,12 +4,109 @@ const ADMIN_SESSION_KEY = 'hc_admin_session';
 const ADMIN_EMAIL = 'admin@gmail.com';
 const ADMIN_PASSWORD = '123321';
 
+function normalizeEmail(email) {
+  return (email || '').trim().toLowerCase();
+}
+
 function getUsers() {
   return JSON.parse(localStorage.getItem(AUTH_KEY) || '[]');
 }
 
 function saveUsers(users) {
   localStorage.setItem(AUTH_KEY, JSON.stringify(users));
+  if (window.HC_API_ENABLED) {
+    syncUsersToServer(users);
+  }
+}
+
+async function syncUsersToServer(users) {
+  try {
+    await fetch('/api/users', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ users })
+    });
+  } catch {
+    /* offline or static-only hosting */
+  }
+}
+
+async function isApiAvailable() {
+  if (window.HC_API_ENABLED) return true;
+  try {
+    const res = await fetch('/api/health', { method: 'GET' });
+    if (res.ok) {
+      window.HC_API_ENABLED = true;
+      return true;
+    }
+  } catch {
+    /* no shared server */
+  }
+  return false;
+}
+
+function mergeUsersFromServer(serverUsers) {
+  const local = getUsers();
+  const byEmail = new Map();
+  local.forEach(u => byEmail.set(normalizeEmail(u.email), u));
+  serverUsers.forEach(u => {
+    const key = normalizeEmail(u.email);
+    if (!key) return;
+    const existing = byEmail.get(key);
+    if (existing) {
+      byEmail.set(key, {
+        ...existing,
+        ...u,
+        password: u.password || existing.password,
+        addresses: (u.addresses && u.addresses.length) ? u.addresses : (existing.addresses || [])
+      });
+    } else {
+      byEmail.set(key, u);
+    }
+  });
+  localStorage.setItem(AUTH_KEY, JSON.stringify(Array.from(byEmail.values())));
+}
+
+async function initAuthSync() {
+  try {
+    const res = await fetch('/api/health');
+    if (!res.ok) return;
+    window.HC_API_ENABLED = true;
+
+    const usersRes = await fetch('/api/users');
+    if (!usersRes.ok) return;
+
+    const data = await usersRes.json();
+    const serverUsers = data.users || [];
+    const localUsers = getUsers();
+
+    if (serverUsers.length === 0 && localUsers.length > 0) {
+      await syncUsersToServer(localUsers);
+      return;
+    }
+
+    if (serverUsers.length > 0) {
+      mergeUsersFromServer(serverUsers);
+    }
+  } catch {
+    window.HC_API_ENABLED = false;
+  }
+}
+
+function upsertLocalUser(user, password) {
+  const users = getUsers();
+  const email = normalizeEmail(user.email);
+  const idx = users.findIndex(u => normalizeEmail(u.email) === email);
+  const record = {
+    ...(idx >= 0 ? users[idx] : {}),
+    ...user,
+    email,
+    password: password || (idx >= 0 ? users[idx].password : user.password)
+  };
+  if (idx >= 0) users[idx] = record;
+  else users.push(record);
+  saveUsers(users);
+  return record;
 }
 
 function isAdminEmail(email) {
@@ -33,7 +130,7 @@ function isLoggedIn() {
 
 function recordUserLogin(email) {
   const users = getUsers();
-  const user = users.find(u => u.email === email);
+  const user = users.find(u => normalizeEmail(u.email) === normalizeEmail(email));
   if (user) {
     user.loginCount = (user.loginCount || 0) + 1;
     user.lastLogin = new Date().toISOString();
@@ -41,12 +138,13 @@ function recordUserLogin(email) {
   }
 }
 
-function signup(name, email, password) {
+function signupLocal(name, email, password) {
+  email = normalizeEmail(email);
   if (isAdminEmail(email)) {
     return { success: false, message: 'This email is reserved for admin use.' };
   }
   const users = getUsers();
-  if (users.find(u => u.email === email)) {
+  if (users.find(u => normalizeEmail(u.email) === email)) {
     return { success: false, message: 'An account with this email already exists.' };
   }
   if (password.length < 6) {
@@ -68,19 +166,35 @@ function signup(name, email, password) {
   return { success: true };
 }
 
-function login(email, password) {
-  email = email.trim().toLowerCase();
-  if (isAdminEmail(email)) {
-    if (password === ADMIN_PASSWORD) {
-      const users = getUsers().filter(u => u.email.toLowerCase() !== ADMIN_EMAIL);
-      saveUsers(users);
-      localStorage.setItem(ADMIN_SESSION_KEY, 'true');
-      localStorage.removeItem(SESSION_KEY);
-      return { success: true, user: { name: 'Admin', email: ADMIN_EMAIL, role: 'admin' }, isAdmin: true };
+async function signup(name, email, password) {
+  email = normalizeEmail(email);
+  if (await isApiAvailable()) {
+    try {
+      const res = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), email, password })
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        upsertLocalUser(data.user, password);
+        localStorage.setItem(SESSION_KEY, email);
+        localStorage.removeItem(ADMIN_SESSION_KEY);
+        return { success: true };
+      }
+      if (!res.ok) {
+        return { success: false, message: data.message || 'Could not create account.' };
+      }
+    } catch {
+      /* fall back to local storage */
     }
-    return { success: false, message: 'Invalid admin password.' };
   }
-  const user = getUsers().find(u => u.email.toLowerCase() === email && u.password === password);
+  return signupLocal(name, email, password);
+}
+
+function loginLocal(email, password) {
+  email = normalizeEmail(email);
+  const user = getUsers().find(u => normalizeEmail(u.email) === email && u.password === password);
   if (!user) {
     return { success: false, message: 'Invalid email or password.' };
   }
@@ -88,6 +202,45 @@ function login(email, password) {
   localStorage.removeItem(ADMIN_SESSION_KEY);
   recordUserLogin(email);
   return { success: true, user, isAdmin: false };
+}
+
+async function login(email, password) {
+  email = normalizeEmail(email);
+  if (isAdminEmail(email)) {
+    if (password === ADMIN_PASSWORD) {
+      const users = getUsers().filter(u => normalizeEmail(u.email) !== ADMIN_EMAIL);
+      saveUsers(users);
+      localStorage.setItem(ADMIN_SESSION_KEY, 'true');
+      localStorage.removeItem(SESSION_KEY);
+      return { success: true, user: { name: 'Admin', email: ADMIN_EMAIL, role: 'admin' }, isAdmin: true };
+    }
+    return { success: false, message: 'Invalid admin password.' };
+  }
+
+  if (await isApiAvailable()) {
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.success && data.user) {
+        const user = upsertLocalUser(data.user, password);
+        localStorage.setItem(SESSION_KEY, email);
+        localStorage.removeItem(ADMIN_SESSION_KEY);
+        recordUserLogin(email);
+        return { success: true, user, isAdmin: false };
+      }
+      if (!res.ok) {
+        return { success: false, message: data.message || 'Invalid email or password.' };
+      }
+    } catch {
+      /* fall back to local storage */
+    }
+  }
+
+  return loginLocal(email, password);
 }
 
 function logout() {
@@ -355,3 +508,7 @@ function hideAccountRequiredModal() {
   overlay.hidden = true;
   document.body.style.overflow = '';
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  initAuthSync();
+});

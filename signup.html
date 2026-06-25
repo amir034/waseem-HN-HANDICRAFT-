@@ -20,11 +20,7 @@
       <a href="index.html" class="logo-area">
         <div class="site-logo">HN <span>Handicraft</span></div>
       </a>
-      <div class="nav-right">
-        <a href="cart.html" class="nav-icon" data-icon="cart">
-          <span class="cart-count" style="display:none">0</span>
-        </a>
-      </div>
+      <div class="nav-right"></div>
     </div>
   </header>
 
@@ -78,7 +74,7 @@
         return;
       }
 
-      document.getElementById('signup-form').addEventListener('submit', (e) => {
+      document.getElementById('signup-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const name = document.getElementById('name').value.trim();
         const email = document.getElementById('email').value.trim();
@@ -92,7 +88,10 @@
           return;
         }
 
-        const result = signup(name, email, password);
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.disabled = true;
+        const result = await signup(name, email, password);
+        if (submitBtn) submitBtn.disabled = false;
         if (result.success) {
           setWelcomeMessage(name);
           window.location.href = 'index.html';

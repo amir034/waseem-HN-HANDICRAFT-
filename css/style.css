@@ -3284,6 +3284,10 @@ body > .mobile-nav:not(.open) {
   z-index: 100;
 }
 
+.admin-brand {
+  flex-shrink: 0;
+}
+
 .admin-brand h2 {
   font-family: var(--font-display);
   font-size: 1.4rem;
@@ -3327,10 +3331,13 @@ body > .mobile-nav:not(.open) {
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
   color: white;
-  padding: 10px;
+  padding: 10px 16px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.82rem;
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-top: auto;
 }
 
 .admin-main {
@@ -3901,23 +3908,73 @@ body > .mobile-nav:not(.open) {
   margin-bottom: 8px;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .admin-sidebar {
     width: 100%;
     position: relative;
     inset: auto;
-    flex-direction: row;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
     align-items: center;
-    padding: 16px;
+    gap: 12px 16px;
+    padding: 14px 16px 0;
+  }
+
+  .admin-brand {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+  }
+
+  .admin-brand h2 {
+    font-size: 1.25rem;
+    line-height: 1.2;
+  }
+
+  .admin-logout-btn {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    justify-self: end;
+    margin-top: 0;
+    padding: 8px 14px;
+    font-size: 0.78rem;
   }
 
   .admin-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
     flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
     margin-top: 0;
     flex: none;
     width: 100%;
-    order: 3;
+    order: unset;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    padding: 0 0 14px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .admin-nav::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  .admin-tab {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    text-align: center;
+    padding: 10px 14px;
+    font-size: 0.78rem;
   }
 
   .admin-main {
@@ -3932,6 +3989,21 @@ body > .mobile-nav:not(.open) {
 
   .admin-page {
     flex-direction: column;
+  }
+
+  .admin-topbar {
+    flex-wrap: wrap;
+  }
+
+  .admin-search-wrap {
+    min-width: 0;
+    flex: 1 1 200px;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-stats {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
