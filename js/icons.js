@@ -40,7 +40,6 @@ function socialLinksHtml(className = 'social-icons') {
       <a href="${whatsappUrl}" target="_blank" rel="noopener" aria-label="WhatsApp" data-whatsapp-link data-icon="whatsapp"></a>
       <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook" data-icon="facebook"></a>
       <a href="https://instagram.com" target="_blank" rel="noopener" aria-label="Instagram" data-icon="instagram"></a>
-      <a href="https://youtube.com" target="_blank" rel="noopener" aria-label="YouTube" data-icon="youtube"></a>
     </div>
   `;
 }

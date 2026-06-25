@@ -310,3 +310,48 @@ function markNotificationRead(email, noteId) {
   if (note) note.read = true;
   saveUsers(users);
 }
+
+function isCustomerLoggedIn() {
+  return !!localStorage.getItem(SESSION_KEY);
+}
+
+function ensureAccountRequiredModal() {
+  if (document.getElementById('account-required-modal')) return;
+  const overlay = document.createElement('div');
+  overlay.id = 'account-required-modal';
+  overlay.className = 'account-modal-overlay';
+  overlay.hidden = true;
+  overlay.innerHTML = `
+    <div class="account-modal-card" role="dialog" aria-modal="true" aria-labelledby="account-modal-title">
+      <button type="button" class="account-modal-close" aria-label="Close">&times;</button>
+      <span class="account-modal-badge">Account Required</span>
+      <h2 id="account-modal-title">Create an account first</h2>
+      <p>Please sign up or log in to add items to your cart and place orders.</p>
+      <div class="account-modal-actions">
+        <a href="signup.html" class="btn btn-primary">Create Account</a>
+        <a href="login.html" class="btn btn-outline-accent">Login</a>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('.account-modal-close').addEventListener('click', () => hideAccountRequiredModal());
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) hideAccountRequiredModal();
+  });
+}
+
+function showAccountRequiredModal() {
+  ensureAccountRequiredModal();
+  const overlay = document.getElementById('account-required-modal');
+  if (!overlay) return;
+  overlay.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
+
+function hideAccountRequiredModal() {
+  const overlay = document.getElementById('account-required-modal');
+  if (!overlay) return;
+  overlay.hidden = true;
+  document.body.style.overflow = '';
+}

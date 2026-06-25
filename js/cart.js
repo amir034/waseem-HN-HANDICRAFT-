@@ -12,6 +12,15 @@ function saveCart(cart) {
 }
 
 function addToCart(productId, quantity = 1) {
+  if (typeof isCustomerLoggedIn === 'function' && !isCustomerLoggedIn()) {
+    if (typeof showAccountRequiredModal === 'function') {
+      showAccountRequiredModal();
+    } else {
+      showToast('Please create an account first to add items to cart.');
+    }
+    return false;
+  }
+
   const product = getProductById(productId);
   if (!product || !product.inStock) return false;
 

@@ -78,7 +78,6 @@ function getSiteFooterHtml() {
       </div>
       <div class="footer-bottom">
         <span>&copy; ${year} HN Handicraft. All rights reserved.</span>
-        <div class="social-icons-mount" data-social-class="social-icons"></div>
       </div>
     </div>
   `;

@@ -97,15 +97,23 @@ function initTestimonialSlider() {
 
 function initScrollReveal() {
   const reveals = document.querySelectorAll('.reveal');
+  if (!reveals.length) return;
+
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
       }
     });
-  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  }, { threshold: 0.08, rootMargin: '0px 0px -24px 0px' });
 
-  reveals.forEach(el => observer.observe(el));
+  reveals.forEach((el, i) => {
+    if (!el.dataset.revealDelay) {
+      el.style.transitionDelay = Math.min(i * 0.06, 0.36) + 's';
+    }
+    observer.observe(el);
+  });
 }
 
 function initMobileMenu() {
