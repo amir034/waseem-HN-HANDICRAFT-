@@ -5,10 +5,47 @@
       "name": "user",
       "email": "user@gmail.com",
       "password": "123321",
-      "addresses": [],
-      "loginCount": 5,
-      "lastLogin": "2026-06-25T21:55:09.913423Z",
-      "createdAt": "2026-06-25T11:29:48.479878Z"
+      "addresses": [
+        {
+          "id": "addr_1782416881649",
+          "fullName": "amir choudhary",
+          "phone": "6006865853",
+          "apartment": "sss",
+          "lane": "vidata nagar jammu",
+          "landmark": "sss",
+          "city": "Jammu",
+          "state": "Jammu & Kashmir",
+          "pincode": "181152",
+          "area": "Bathindi",
+          "isDefault": true,
+          "createdAt": "2026-06-25T19:48:01.649Z"
+        },
+        {
+          "id": "addr_1782416986496",
+          "fullName": "amir",
+          "phone": "6066869448",
+          "apartment": "034",
+          "lane": "jdnkajd",
+          "landmark": "aklsljda",
+          "city": "Rajauri",
+          "state": "Jammu & Kashmir",
+          "pincode": "185131",
+          "area": "Bathuni",
+          "isDefault": false,
+          "createdAt": "2026-06-25T19:49:46.496Z"
+        }
+      ],
+      "loginCount": 6,
+      "lastLogin": "2026-06-26T06:19:10.855904Z",
+      "createdAt": "2026-06-25T11:29:48.479878Z",
+      "stockAlerts": [
+        {
+          "productId": "m5",
+          "productName": "Silver Filigree Pendant",
+          "productCode": "PROD-000011",
+          "createdAt": "2026-06-25T19:53:09.245Z"
+        }
+      ]
     }
   ]
 }

@@ -68,7 +68,6 @@ body {
 }
 
 /* Clip wide children (ticker animation, scaled hero images, etc.) */
-.site-header,
 .announcement-ticker-wrap,
 .hero-slider,
 .site-footer,
@@ -77,6 +76,13 @@ body {
 .page-hero {
   max-width: 100%;
   overflow-x: hidden;
+}
+
+/* Header must use clip (not hidden) so overflow-y stays visible for dropdown menus */
+.site-header {
+  max-width: 100%;
+  overflow-x: clip;
+  overflow-y: visible;
 }
 
 .site-header .container,
@@ -101,7 +107,7 @@ body::before {
   opacity: 0.65;
 }
 
-body > *:not(.offer-popup-overlay):not(.mobile-nav):not(.whatsapp-fab) {
+body > *:not(.offer-popup-overlay):not(.mobile-nav):not(.whatsapp-fab):not(.admin-modal):not(.admin-sidebar):not(.site-header):not(.announcement-ticker-wrap) {
   position: relative;
   z-index: 1;
 }
@@ -457,22 +463,23 @@ body > .site-header {
 }
 
 .nav-dropdown .dropdown-menu {
-  position: absolute;
-  top: 100%;
+  position: fixed;
+  top: 0;
   left: 0;
   background: white;
   min-width: 200px;
   box-shadow: var(--shadow-soft);
+  z-index: 9500;
   opacity: 0;
   visibility: hidden;
   transform: translateY(8px);
   transition: var(--transition-smooth);
   padding: 12px 0;
-  margin-top: 8px;
   border-radius: var(--radius-card);
 }
 
-.nav-dropdown:hover .dropdown-menu {
+.nav-dropdown:hover .dropdown-menu,
+.nav-dropdown.open .dropdown-menu {
   opacity: 1;
   visibility: visible;
   transform: translateY(0);
@@ -711,16 +718,110 @@ body > .site-header {
   pointer-events: none;
 }
 
+.btn-in-cart {
+  background: #27ae60 !important;
+  color: #fff !important;
+  cursor: default;
+  border-color: #27ae60 !important;
+}
+
+.btn-notify {
+  background: transparent;
+  color: var(--color-accent);
+  border: 1.5px solid var(--color-accent);
+  cursor: pointer;
+}
+
+.btn-notify:hover {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+/* Notify Me Modal */
+.notify-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 8000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.notify-modal-box {
+  background: #fff;
+  border-radius: 14px;
+  padding: 36px 32px 28px;
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  text-align: center;
+}
+
+.notify-modal-box h3 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--color-text);
+  margin: 0 0 10px;
+}
+
+.notify-modal-box p {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.notify-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #aaa;
+  line-height: 1;
+}
+
+.notify-modal-close:hover {
+  color: var(--color-text);
+}
+
+#notify-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#notify-form input[type="email"] {
+  padding: 11px 16px;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-family: var(--font-primary);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#notify-form input[type="email"]:focus {
+  border-color: var(--color-accent);
+}
+
 @keyframes btnCartFlash {
-  0%   { background: var(--color-accent); transform: scale(1); }
-  25%  { background: #27ae60; color: #fff; transform: scale(1.04); }
-  70%  { background: #27ae60; color: #fff; transform: scale(1.04); }
-  100% { background: var(--color-accent); color: #fff; transform: scale(1); }
+  0%   { background: #27ae60; color: #fff; transform: scale(1.04); }
+  80%  { background: #27ae60; color: #fff; transform: scale(1.04); }
+  100% { background: #27ae60; color: #fff; transform: scale(1); }
 }
 
 .btn-added {
-  animation: btnCartFlash 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
+  animation: btnCartFlash 0.9s ease forwards !important;
   pointer-events: none;
+  background: #27ae60 !important;
+  color: #fff !important;
 }
 
 /* ===== Hero Slider ===== */
@@ -3337,7 +3438,7 @@ body > .mobile-nav:not(.open) {
   width: 240px;
   background: var(--color-hero-green);
   color: white;
-  padding: 28px 20px;
+  padding: 28px 20px 72px;
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -3367,6 +3468,14 @@ body > .mobile-nav:not(.open) {
   gap: 6px;
   margin-top: 32px;
   flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.admin-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .admin-tab {
@@ -3396,9 +3505,12 @@ body > .mobile-nav:not(.open) {
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.82rem;
-  flex-shrink: 0;
   white-space: nowrap;
-  margin-top: auto;
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  right: 20px;
+  text-align: center;
 }
 
 .admin-main {
@@ -3680,6 +3792,37 @@ body > .mobile-nav:not(.open) {
   color: var(--color-accent);
 }
 
+.admin-add-section-row {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 24px;
+}
+
+.admin-add-section-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: white;
+  border: 2px dashed var(--color-accent);
+  color: var(--color-accent);
+  border-radius: 10px;
+  padding: 14px 32px;
+  font-size: 0.9rem;
+  font-family: var(--font-primary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  width: 100%;
+  max-width: 380px;
+  justify-content: center;
+}
+
+.admin-add-section-btn:hover {
+  background: var(--color-accent);
+  color: white;
+  border-style: solid;
+}
+
 .admin-add-icon {
   font-size: 2.4rem;
   font-weight: 300;
@@ -3689,13 +3832,19 @@ body > .mobile-nav:not(.open) {
 .admin-modal {
   display: none;
   position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 1000;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.55);
+  z-index: 9999;
   align-items: flex-start;
   justify-content: center;
   padding: 24px;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .admin-modal.open {
@@ -4442,6 +4591,12 @@ body > .mobile-nav:not(.open) {
   border: 1px solid #e8e4df;
   border-radius: 8px;
   padding: 16px;
+  margin-bottom: 20px;
+}
+
+.user-detail-actions {
+  display: flex;
+  gap: 10px;
   margin-bottom: 20px;
 }
 

@@ -7,10 +7,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=11">
+  <link rel="stylesheet" href="css/style.css?v=21">
   <style>
     html, body { width: 100%; max-width: 100%; overflow-x: hidden; overflow-x: clip; margin: 0; padding: 0; }
-    .site-header, .announcement-ticker-wrap, .hero-slider, .section, .site-footer { width: 100%; max-width: 100%; overflow-x: hidden; }
+    .announcement-ticker-wrap, .hero-slider, .section, .site-footer { width: 100%; max-width: 100%; overflow-x: hidden; }
+    .site-header { width: 100%; max-width: 100%; overflow-x: clip; overflow-y: visible; }
     .mobile-nav { display: none !important; position: fixed !important; inset: 0; z-index: 2000; pointer-events: none; }
     .mobile-nav.open { display: flex !important; pointer-events: auto; }
     @media (max-width: 1024px) {
@@ -330,6 +331,19 @@
     <a href="#" onclick="logout(); return false;" data-auth="user" style="display:none">Logout</a>
     <a href="cart.html">Cart</a>
   </nav>
+
+  <!-- Notify Me Modal -->
+  <div id="notify-modal" class="notify-modal-overlay" style="display:none" aria-hidden="true">
+    <div class="notify-modal-box">
+      <button class="notify-modal-close" id="notify-modal-close" aria-label="Close">&times;</button>
+      <h3>Notify Me When Available</h3>
+      <p>This product is currently out of stock. Enter your email and we'll let you know the moment it's back.</p>
+      <form id="notify-form">
+        <input type="email" id="notify-email" placeholder="Your email address" required>
+        <button type="submit" class="btn btn-primary">Notify Me</button>
+      </form>
+    </div>
+  </div>
 
   <script src="js/site-sync.js"></script>
   <script src="js/config.js"></script>

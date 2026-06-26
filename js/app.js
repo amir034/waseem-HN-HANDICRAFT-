@@ -151,9 +151,17 @@ function initMobileMenu() {
 }
 
 function renderProductCard(product) {
-  const btnClass = product.inStock ? 'btn btn-primary btn-sm' : 'btn btn-sold-out btn-sm';
-  const btnText = product.inStock ? 'Add to Cart' : 'Sold Out';
-  const badge = !product.inStock ? '<span class="product-badge">Sold Out</span>' : '';
+  let btnClass, btnText, btnAttrs;
+  if (product.inStock) {
+    btnClass = 'btn btn-primary btn-sm';
+    btnText = 'Add to Cart';
+    btnAttrs = `data-add-cart="${product.id}"`;
+  } else {
+    btnClass = 'btn btn-notify btn-sm';
+    btnText = 'Notify Me';
+    btnAttrs = `data-notify="${product.id}"`;
+  }
+  const badge = !product.inStock ? '<span class="product-badge">Out of Stock</span>' : '';
   const offerBadge = hasOffer(product) ? '<span class="product-badge offer-badge">' + getOfferDiscount(product) + '% OFF</span>' : '';
   const labels = getCategoryLabels();
 
@@ -169,7 +177,7 @@ function renderProductCard(product) {
           <div class="product-price">${renderPriceHtml(product)}</div>
         </div>
       </a>
-      <button class="${btnClass}" data-add-cart="${product.id}" ${!product.inStock ? 'disabled' : ''}>
+      <button class="${btnClass}" ${btnAttrs}>
         ${btnText}
       </button>
     </div>
@@ -187,11 +195,24 @@ function renderProductGrid(container, category) {
       e.stopPropagation();
       const added = addToCart(btn.dataset.addCart);
       if (added) {
+        const originalText = btn.textContent;
         btn.classList.remove('btn-added');
         void btn.offsetWidth;
+        btn.textContent = 'Added ✓';
         btn.classList.add('btn-added');
-        setTimeout(() => btn.classList.remove('btn-added'), 750);
+        setTimeout(() => {
+          btn.classList.remove('btn-added');
+          btn.textContent = originalText;
+        }, 900);
       }
+    });
+  });
+
+  container.querySelectorAll('[data-notify]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      showNotifyModal(btn.dataset.notify);
     });
   });
 }
@@ -222,6 +243,73 @@ function initProductFilters() {
         card.style.animationDelay = (i * 0.05) + 's';
       });
     });
+  });
+}
+
+function showNotifyModal(productId) {
+  const overlay = document.getElementById('notify-modal');
+  if (!overlay) {
+    showToast("We'll notify you when this product is back in stock!");
+    return;
+  }
+  overlay.style.display = 'flex';
+  overlay.setAttribute('aria-hidden', 'false');
+  const closeBtn = document.getElementById('notify-modal-close');
+  const form = document.getElementById('notify-form');
+  const emailInput = document.getElementById('notify-email');
+
+  function closeModal() {
+    overlay.style.display = 'none';
+    overlay.setAttribute('aria-hidden', 'true');
+    if (form) form.reset();
+  }
+
+  if (closeBtn) closeBtn.onclick = closeModal;
+  overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+
+  if (form) {
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const email = emailInput ? emailInput.value.trim() : '';
+      if (email) {
+        closeModal();
+        showToast('Done! We\'ll email you at ' + email + ' when it\'s back in stock.');
+      }
+    };
+  }
+}
+
+function positionDropdownMenu(dropdown) {
+  const trigger = dropdown.querySelector('.nav-link') || dropdown.querySelector('a');
+  const menu = dropdown.querySelector('.dropdown-menu');
+  if (!trigger || !menu) return;
+  const rect = trigger.getBoundingClientRect();
+  menu.style.top = (rect.bottom + 4) + 'px';
+  menu.style.left = rect.left + 'px';
+}
+
+function initNavDropdowns() {
+  document.querySelectorAll('.nav-dropdown').forEach(dropdown => {
+    const trigger = dropdown.querySelector('.nav-link');
+    if (!trigger) return;
+    trigger.style.cursor = 'pointer';
+
+    dropdown.addEventListener('mouseenter', () => {
+      positionDropdownMenu(dropdown);
+    });
+
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = dropdown.classList.contains('open');
+      document.querySelectorAll('.nav-dropdown.open').forEach(d => d.classList.remove('open'));
+      if (!isOpen) {
+        positionDropdownMenu(dropdown);
+        dropdown.classList.add('open');
+      }
+    });
+  });
+  document.addEventListener('click', () => {
+    document.querySelectorAll('.nav-dropdown.open').forEach(d => d.classList.remove('open'));
   });
 }
 
@@ -297,6 +385,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initTestimonialSlider();
   initScrollReveal();
   initMobileMenu();
+  initNavDropdowns();
   initProductFilters();
   initDynamicCategoryNav();
   initCategoryGrid();

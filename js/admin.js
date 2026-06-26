@@ -178,12 +178,25 @@ function renderProductsTab() {
         </div>
       </div>
     `;
-  }).join('');
+  }).join('') + `
+    <div class="admin-add-section-row">
+      <button type="button" class="admin-add-section-btn" id="add-section-inline-btn">
+        <span class="admin-add-icon">+</span> Add New Section / Category
+      </button>
+    </div>
+  `;
 
   bindProductCardEvents(container);
   container.querySelectorAll('.admin-add-card').forEach(card => {
     card.addEventListener('click', () => openWizard(card.dataset.addProduct));
   });
+
+  const inlineAddSection = document.getElementById('add-section-inline-btn');
+  if (inlineAddSection) {
+    inlineAddSection.addEventListener('click', () => {
+      document.getElementById('category-modal').classList.add('open');
+    });
+  }
 }
 
 function escapeAttr(str) {
@@ -841,6 +854,9 @@ function showUserOrders(email) {
       <p><strong>Total Logins:</strong> ${user.loginCount || 0}</p>
       <p><strong>Total Orders:</strong> ${orderCount}</p>
     </div>
+    <div class="user-detail-actions">
+      <button type="button" class="btn btn-outline-accent btn-sm admin-delete-user-btn" data-email="${user.email}">Delete User Account</button>
+    </div>
     <h4 class="user-orders-heading">${user.name}'s Orders (${orderCount})</h4>
     ${orders.length === 0 ? '<p class="admin-empty">No orders placed.</p>' : orders.map(order => `
       <div class="admin-order-card">
@@ -861,6 +877,20 @@ function showUserOrders(email) {
     `).join('')}
   `;
   bindOrderActionEvents(panel);
+
+  const deleteUserBtn = panel.querySelector('.admin-delete-user-btn');
+  if (deleteUserBtn) {
+    deleteUserBtn.addEventListener('click', () => {
+      const emailToDelete = deleteUserBtn.dataset.email;
+      if (!confirm(`Delete user "${user.name}" (${emailToDelete})? This cannot be undone.`)) return;
+      deleteUser(emailToDelete);
+      panel.innerHTML = '';
+      renderUsersTab();
+      renderStats();
+      showToast('User account deleted.');
+    });
+  }
+
   panel.scrollIntoView({ behavior: 'smooth' });
 }
 

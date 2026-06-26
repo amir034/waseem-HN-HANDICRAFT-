@@ -42,6 +42,12 @@ function saveUsers(users) {
   }
 }
 
+function deleteUser(email) {
+  const normalized = normalizeEmail(email);
+  const users = getUsers().filter(u => normalizeEmail(u.email) !== normalized);
+  saveUsers(users);
+}
+
 function saveUserRecord(user) {
   const users = getUsers();
   const email = normalizeEmail(user.email);
