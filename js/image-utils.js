@@ -1,3 +1,10 @@
+async function finalizeImageData(dataUrl) {
+  if (typeof persistImageDataUrl === 'function') {
+    return persistImageDataUrl(dataUrl);
+  }
+  return dataUrl;
+}
+
 function cropImageToSquare(source, size = 600) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -27,6 +34,7 @@ function cropImageToSquare(source, size = 600) {
 function readAndCropImageFile(file, callback) {
   if (!file) return;
   cropImageToSquare(file)
+    .then(finalizeImageData)
     .then(callback)
     .catch(() => {
       if (typeof showToast === 'function') showToast('Failed to process image.');
@@ -74,8 +82,29 @@ function cropImageToHero(source, width = 1200) {
 function readAndCropHeroFile(file, callback) {
   if (!file) return;
   cropImageToHero(file)
+    .then(finalizeImageData)
     .then(callback)
     .catch(() => {
       if (typeof showToast === 'function') showToast('Failed to process image.');
+    });
+}
+
+function readAndCropHeroUrl(url, callback) {
+  if (!url) return;
+  cropImageToHero(url)
+    .then(finalizeImageData)
+    .then(callback)
+    .catch(() => {
+      if (typeof showToast === 'function') showToast('Could not load image from URL.');
+    });
+}
+
+function readAndCropSquareUrl(url, callback) {
+  if (!url) return;
+  cropImageToSquare(url)
+    .then(finalizeImageData)
+    .then(callback)
+    .catch(() => {
+      if (typeof showToast === 'function') showToast('Could not load image from URL.');
     });
 }

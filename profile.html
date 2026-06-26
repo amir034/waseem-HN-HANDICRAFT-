@@ -182,6 +182,7 @@
     <a href="cart.html">Cart</a>
   </nav>
 
+  <script src="js/site-sync.js"></script>
   <script src="js/config.js"></script>
   <script src="js/products.js"></script>
   <script src="js/content.js"></script>
@@ -190,6 +191,7 @@
   <script src="js/cart.js"></script>
   <script src="js/checkout.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/site-boot.js"></script>
   <script>
     let addrPincodeData = null;
     let editingAddressId = null;
@@ -417,7 +419,8 @@
       document.getElementById('profile-order-count').textContent = getUserOrders(user.email).length;
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.__siteStoreReady) await window.__siteStoreReady;
       if (!requireAuth('login.html?redirect=profile.html')) return;
       updateAuthUI();
       updateCartCount();

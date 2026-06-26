@@ -276,10 +276,23 @@ function bindProductCardEvents(container) {
 
     editBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      toggleEdit(editPanel.classList.contains('hidden'));
+      openEditModal(id);
     });
 
-    caption.addEventListener('click', () => toggleEdit(true));
+    caption.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openEditModal(id);
+    });
+
+    card.addEventListener('click', (e) => {
+      if (
+        e.target.closest('.admin-delete-btn') ||
+        e.target.closest('.admin-edit-btn') ||
+        e.target.closest('.admin-photo-btn') ||
+        e.target.closest('.admin-inline-edit')
+      ) return;
+      openEditModal(id);
+    });
 
     offerInput.addEventListener('input', updateDiscountPreview);
     priceInput.addEventListener('input', updateDiscountPreview);
@@ -351,7 +364,9 @@ function openWizard(categoryId) {
   document.getElementById('wizard-price').value = '';
   document.getElementById('wizard-offer').value = '';
   document.getElementById('wizard-sold-out').checked = false;
-  document.getElementById('product-wizard-modal').classList.add('open');
+  const wizardModal = document.getElementById('product-wizard-modal');
+  wizardModal.classList.add('open');
+  wizardModal.scrollTop = 0;
 }
 
 function wizardNext() {
@@ -446,7 +461,9 @@ function openEditModal(id) {
   document.getElementById('edit-extra-images').value = '';
   renderEditImageGallery();
 
-  document.getElementById('edit-modal').classList.add('open');
+  const editModal = document.getElementById('edit-modal');
+  editModal.classList.add('open');
+  editModal.scrollTop = 0;
 }
 
 function renderEditImageGallery() {
@@ -1138,14 +1155,10 @@ function bindHeroFormEvents() {
   document.getElementById('inline-hero-image-url').addEventListener('blur', () => {
     const url = document.getElementById('inline-hero-image-url').value.trim();
     if (!url) return;
-    cropImageToHero(url).then(data => {
+    readAndCropHeroUrl(url, (data) => {
       editHeroSlideImage = data;
       document.getElementById('inline-hero-image-preview').innerHTML =
         `<div class="admin-hero-preview-fill" style="background-image:url('${data}')"></div>`;
-    }).catch(() => {
-      editHeroSlideImage = url;
-      document.getElementById('inline-hero-image-preview').innerHTML =
-        `<div class="admin-hero-preview-fill" style="background-image:url('${escapeAttr(url)}')"></div>`;
     });
   });
 
@@ -1390,10 +1403,10 @@ function bindArtisanFormEvents() {
   document.getElementById('inline-artisan-image-url').addEventListener('blur', () => {
     const url = document.getElementById('inline-artisan-image-url').value.trim();
     if (!url) return;
-    cropImageToSquare(url).then(data => {
+    readAndCropSquareUrl(url, (data) => {
       editArtisanImage = data;
       document.getElementById('inline-artisan-image-preview').innerHTML = `<img src="${data}" alt="">`;
-    }).catch(() => showToast('Could not load image from URL.'));
+    });
   });
 
   document.getElementById('inline-artisan-cancel').addEventListener('click', resetInlineArtisanForm);
@@ -1600,8 +1613,14 @@ function renderAnnouncementsTab() {
       buttonText: document.getElementById('offer-button-text').value.trim() || 'Shop Now',
       buttonLink: document.getElementById('offer-button-link').value.trim() || 'shop.html'
     });
+    if (typeof pushSiteContentToServer === 'function') {
+      pushSiteContentToServer();
+    }
     showToast('Offer popup saved!');
   });
 }
 
-document.addEventListener('DOMContentLoaded', initAdmin);
+document.addEventListener('DOMContentLoaded', async () => {
+  if (window.__siteStoreReady) await window.__siteStoreReady;
+  initAdmin();
+});

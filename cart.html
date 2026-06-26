@@ -55,6 +55,7 @@
     <a href="profile.html" data-auth="user" style="display:none">My Profile</a>
   </nav>
 
+  <script src="js/site-sync.js"></script>
   <script src="js/config.js"></script>
   <script src="js/products.js"></script>
   <script src="js/content.js"></script>
@@ -63,6 +64,7 @@
   <script src="js/cart.js"></script>
   <script src="js/checkout.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/site-boot.js"></script>
   <script>
     function renderCartItems() {
       const cart = getCart();
@@ -355,7 +357,10 @@
       updateAuthUI();
     }
 
-    document.addEventListener('DOMContentLoaded', renderCart);
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.__siteStoreReady) await window.__siteStoreReady;
+      renderCart();
+    });
   </script>
 </body>
 </html>

@@ -208,7 +208,8 @@ button, input, select, textarea {
   overflow: hidden;
   overflow-x: clip;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  position: relative;
+  position: sticky;
+  top: var(--header-height);
   z-index: 999;
   width: 100%;
   max-width: 100%;
@@ -402,11 +403,16 @@ button, input, select, textarea {
   width: 100%;
   max-width: 100%;
   padding-top: env(safe-area-inset-top, 0);
+  transition: box-shadow 0.3s ease;
 }
 
 body > .site-header {
   position: sticky;
   z-index: 1000;
+}
+
+.site-header.header-scrolled {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.38);
 }
 
 .header-inner {
@@ -702,6 +708,18 @@ body > .site-header {
   background: #ddd;
   color: #888;
   cursor: not-allowed;
+  pointer-events: none;
+}
+
+@keyframes btnCartFlash {
+  0%   { background: var(--color-accent); transform: scale(1); }
+  25%  { background: #27ae60; color: #fff; transform: scale(1.04); }
+  70%  { background: #27ae60; color: #fff; transform: scale(1.04); }
+  100% { background: var(--color-accent); color: #fff; transform: scale(1); }
+}
+
+.btn-added {
+  animation: btnCartFlash 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards !important;
   pointer-events: none;
 }
 
@@ -3482,12 +3500,14 @@ body > .mobile-nav:not(.open) {
   position: relative;
   display: flex;
   flex-direction: column;
-  cursor: default;
+  cursor: pointer;
 }
 
 .admin-product-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 28px rgba(0,0,0,0.13);
+  outline: 2px solid var(--color-accent);
+  outline-offset: 0;
 }
 
 .admin-product-card.is-editing {
@@ -3672,9 +3692,10 @@ body > .mobile-nav:not(.open) {
   inset: 0;
   background: rgba(0,0,0,0.5);
   z-index: 1000;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 24px;
+  overflow-y: auto;
 }
 
 .admin-modal.open {
@@ -3687,9 +3708,9 @@ body > .mobile-nav:not(.open) {
   padding: 28px;
   width: 100%;
   max-width: 440px;
-  max-height: 90vh;
-  overflow-y: auto;
+  overflow-y: visible;
   position: relative;
+  margin: auto;
 }
 
 .admin-modal-lg {

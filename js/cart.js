@@ -121,7 +121,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function generateOrderId() {
   const counter = parseInt(localStorage.getItem(ORDER_COUNTER_KEY) || '0', 10) + 1;
-  localStorage.setItem(ORDER_COUNTER_KEY, String(counter));
+  if (typeof safeStorageSet === 'function') {
+    safeStorageSet(ORDER_COUNTER_KEY, String(counter));
+  } else {
+    localStorage.setItem(ORDER_COUNTER_KEY, String(counter));
+  }
   return 'ORD-' + String(counter).padStart(6, '0');
 }
 
@@ -130,7 +134,11 @@ function getOrders() {
 }
 
 function saveOrders(orders) {
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  if (typeof safeStorageSet === 'function') {
+    safeStorageSet(ORDERS_KEY, JSON.stringify(orders));
+  } else {
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+  }
 }
 
 function createOrder(userEmail, addressDetails) {
@@ -246,7 +254,11 @@ function getReturns() {
 }
 
 function saveReturns(returns) {
-  localStorage.setItem(RETURNS_KEY, JSON.stringify(returns));
+  if (typeof safeStorageSet === 'function') {
+    safeStorageSet(RETURNS_KEY, JSON.stringify(returns));
+  } else {
+    localStorage.setItem(RETURNS_KEY, JSON.stringify(returns));
+  }
 }
 
 function submitReturn(data) {

@@ -32,7 +32,11 @@ const DEFAULT_PRODUCTS = [
 
 function initProductStore() {
   if (!localStorage.getItem(CATEGORIES_KEY)) {
-    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(DEFAULT_CATEGORIES));
+    if (typeof safeStorageSet === 'function') {
+      safeStorageSet(CATEGORIES_KEY, JSON.stringify(DEFAULT_CATEGORIES));
+    } else {
+      localStorage.setItem(CATEGORIES_KEY, JSON.stringify(DEFAULT_CATEGORIES));
+    }
   }
   if (!localStorage.getItem(PRODUCTS_KEY)) {
     const products = DEFAULT_PRODUCTS.map((p, i) => ({
@@ -41,8 +45,13 @@ function initProductStore() {
       offerPrice: null,
       createdAt: new Date().toISOString()
     }));
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
-    localStorage.setItem(PRODUCT_COUNTER_KEY, String(products.length));
+    if (typeof safeStorageSet === 'function') {
+      safeStorageSet(PRODUCTS_KEY, JSON.stringify(products));
+      safeStorageSet(PRODUCT_COUNTER_KEY, String(products.length));
+    } else {
+      localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+      localStorage.setItem(PRODUCT_COUNTER_KEY, String(products.length));
+    }
   } else {
     migrateProducts();
   }
@@ -65,19 +74,26 @@ function migrateProducts() {
     }
   });
   if (changed) {
-    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
-    localStorage.setItem(PRODUCT_COUNTER_KEY, String(counter));
+    if (typeof safeStorageSet === 'function') {
+      safeStorageSet(PRODUCTS_KEY, JSON.stringify(products));
+      safeStorageSet(PRODUCT_COUNTER_KEY, String(counter));
+    } else {
+      localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+      localStorage.setItem(PRODUCT_COUNTER_KEY, String(counter));
+    }
   }
 }
-
-initProductStore();
 
 function getCategories() {
   return JSON.parse(localStorage.getItem(CATEGORIES_KEY) || '[]');
 }
 
 function saveCategories(categories) {
-  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+  if (typeof safeStorageSet === 'function') {
+    safeStorageSet(CATEGORIES_KEY, JSON.stringify(categories));
+  } else {
+    localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+  }
 }
 
 function getCategoryLabels() {
@@ -92,7 +108,11 @@ function slugify(text) {
 
 function generateProductCode() {
   const counter = parseInt(localStorage.getItem(PRODUCT_COUNTER_KEY) || '0', 10) + 1;
-  localStorage.setItem(PRODUCT_COUNTER_KEY, String(counter));
+  if (typeof safeStorageSet === 'function') {
+    safeStorageSet(PRODUCT_COUNTER_KEY, String(counter));
+  } else {
+    localStorage.setItem(PRODUCT_COUNTER_KEY, String(counter));
+  }
   return 'PROD-' + String(counter).padStart(6, '0');
 }
 
@@ -105,7 +125,11 @@ function getProducts() {
 }
 
 function saveProducts(products) {
-  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+  if (typeof safeStorageSet === 'function') {
+    safeStorageSet(PRODUCTS_KEY, JSON.stringify(products));
+  } else {
+    localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
+  }
 }
 
 function getProductById(id) {
@@ -208,5 +232,3 @@ function deleteProduct(id) {
   const products = getProducts().filter(p => p.id !== id && p.productCode !== id);
   saveProducts(products);
 }
-
-const CATEGORY_LABELS = getCategoryLabels();

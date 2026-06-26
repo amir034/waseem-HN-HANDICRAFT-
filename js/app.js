@@ -116,6 +116,16 @@ function initScrollReveal() {
   });
 }
 
+function initScrollHeader() {
+  const header = document.querySelector('.site-header');
+  if (!header) return;
+  const onScroll = () => {
+    header.classList.toggle('header-scrolled', window.scrollY > 8);
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+}
+
 function initMobileMenu() {
   const btn = document.querySelector('.mobile-menu-btn');
   const nav = document.querySelector('.mobile-nav');
@@ -175,7 +185,13 @@ function renderProductGrid(container, category) {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      addToCart(btn.dataset.addCart);
+      const added = addToCart(btn.dataset.addCart);
+      if (added) {
+        btn.classList.remove('btn-added');
+        void btn.offsetWidth;
+        btn.classList.add('btn-added');
+        setTimeout(() => btn.classList.remove('btn-added'), 750);
+      }
     });
   });
 }
@@ -272,9 +288,11 @@ function initSmoothScroll() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  if (window.__siteStoreReady) await window.__siteStoreReady;
   if (typeof initSitePromotions === 'function') initSitePromotions();
   if (typeof renderHeroSection === 'function') renderHeroSection();
+  initScrollHeader();
   initHeroSlider();
   initTestimonialSlider();
   initScrollReveal();

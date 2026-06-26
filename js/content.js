@@ -129,21 +129,29 @@ const DEFAULT_ARTISANS = [
   }
 ];
 
+function storeContentItem(key, value) {
+  if (typeof safeStorageSet === 'function') {
+    safeStorageSet(key, value);
+  } else {
+    localStorage.setItem(key, value);
+  }
+}
+
 function initContentStore() {
   if (!localStorage.getItem(ARTISAN_SECTION_KEY)) {
-    localStorage.setItem(ARTISAN_SECTION_KEY, JSON.stringify(DEFAULT_ARTISAN_SECTION));
+    storeContentItem(ARTISAN_SECTION_KEY, JSON.stringify(DEFAULT_ARTISAN_SECTION));
   }
   if (!localStorage.getItem(ARTISANS_KEY)) {
-    localStorage.setItem(ARTISANS_KEY, JSON.stringify(DEFAULT_ARTISANS));
+    storeContentItem(ARTISANS_KEY, JSON.stringify(DEFAULT_ARTISANS));
   }
   if (!localStorage.getItem(ANNOUNCEMENTS_KEY)) {
-    localStorage.setItem(ANNOUNCEMENTS_KEY, JSON.stringify(DEFAULT_ANNOUNCEMENTS));
+    storeContentItem(ANNOUNCEMENTS_KEY, JSON.stringify(DEFAULT_ANNOUNCEMENTS));
   }
   if (!localStorage.getItem(OFFER_POPUP_KEY)) {
-    localStorage.setItem(OFFER_POPUP_KEY, JSON.stringify(DEFAULT_OFFER_POPUP));
+    storeContentItem(OFFER_POPUP_KEY, JSON.stringify(DEFAULT_OFFER_POPUP));
   }
   if (!localStorage.getItem(HERO_SLIDES_KEY)) {
-    localStorage.setItem(HERO_SLIDES_KEY, JSON.stringify(DEFAULT_HERO_SLIDES));
+    storeContentItem(HERO_SLIDES_KEY, JSON.stringify(DEFAULT_HERO_SLIDES));
   }
 }
 
@@ -153,7 +161,7 @@ function getHeroSlides() {
 }
 
 function saveHeroSlides(slides) {
-  localStorage.setItem(HERO_SLIDES_KEY, JSON.stringify(slides));
+  storeContentItem(HERO_SLIDES_KEY, JSON.stringify(slides));
 }
 
 function getHeroSlideById(id) {
@@ -240,15 +248,13 @@ function renderHeroSection() {
   slider.classList.add('hero-ready');
 }
 
-initContentStore();
-
 function getArtisanSection() {
   return JSON.parse(localStorage.getItem(ARTISAN_SECTION_KEY) || '{}');
 }
 
 function saveArtisanSection(data) {
   const section = { ...getArtisanSection(), ...data };
-  localStorage.setItem(ARTISAN_SECTION_KEY, JSON.stringify(section));
+  storeContentItem(ARTISAN_SECTION_KEY, JSON.stringify(section));
   return section;
 }
 
@@ -258,7 +264,7 @@ function getArtisans() {
 }
 
 function saveArtisans(artisans) {
-  localStorage.setItem(ARTISANS_KEY, JSON.stringify(artisans));
+  storeContentItem(ARTISANS_KEY, JSON.stringify(artisans));
 }
 
 function getArtisanById(id) {
@@ -376,7 +382,7 @@ function getAnnouncements() {
 
 function saveAnnouncements(messages) {
   const cleaned = messages.map(m => String(m).trim()).filter(Boolean);
-  localStorage.setItem(ANNOUNCEMENTS_KEY, JSON.stringify(cleaned));
+  storeContentItem(ANNOUNCEMENTS_KEY, JSON.stringify(cleaned));
   return cleaned;
 }
 
@@ -390,7 +396,7 @@ function saveOfferPopup(data) {
     ...data,
     updatedAt: new Date().toISOString()
   };
-  localStorage.setItem(OFFER_POPUP_KEY, JSON.stringify(offer));
+  storeContentItem(OFFER_POPUP_KEY, JSON.stringify(offer));
   return offer;
 }
 

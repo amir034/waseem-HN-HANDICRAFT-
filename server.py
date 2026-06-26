@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """Static site + shared auth API (same credentials on every device)."""
+import base64
 import json
 import os
 import re
+import time
+from datetime import datetime, timezone
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(ROOT, 'data')
 DATA_FILE = os.path.join(DATA_DIR, 'site-store.json')
+CONTENT_FILE = os.path.join(DATA_DIR, 'site-content.json')
+UPLOAD_DIR = os.path.join(ROOT, 'assets', 'uploads')
 PORT = 8080
 ADMIN_EMAIL = 'admin@gmail.com'
 
@@ -25,6 +30,39 @@ def save_store(data):
     os.makedirs(DATA_DIR, exist_ok=True)
     with open(DATA_FILE, 'w', encoding='utf-8') as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def load_site_content():
+    os.makedirs(DATA_DIR, exist_ok=True)
+    if not os.path.exists(CONTENT_FILE):
+        return {'content': {}}
+    with open(CONTENT_FILE, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def save_site_content(data):
+    os.makedirs(DATA_DIR, exist_ok=True)
+    with open(CONTENT_FILE, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def save_uploaded_image(data_url):
+    if not data_url or not str(data_url).startswith('data:image'):
+        raise ValueError('Invalid image data.')
+    header, encoded = str(data_url).split(',', 1)
+    ext = 'jpg'
+    if 'png' in header:
+        ext = 'png'
+    elif 'webp' in header:
+        ext = 'webp'
+    elif 'gif' in header:
+        ext = 'gif'
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    name = f'img_{int(time.time() * 1000)}.{ext}'
+    file_path = os.path.join(UPLOAD_DIR, name)
+    with open(file_path, 'wb') as handle:
+        handle.write(base64.b64decode(encoded))
+    return f'/assets/uploads/{name}'
 
 
 def normalize_email(email):
@@ -66,7 +104,10 @@ class SiteHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         path = urlparse(self.path).path
         if path == '/api/health':
-            self.send_json({'ok': True})
+            self.send_json({'ok': True, 'persist': True, 'siteSync': True})
+            return
+        if path == '/api/site-content':
+            self.send_json(load_site_content())
             return
         if path == '/api/users':
             store = load_store()
@@ -77,6 +118,19 @@ class SiteHandler(SimpleHTTPRequestHandler):
 
     def do_PUT(self):
         path = urlparse(self.path).path
+
+        if path == '/api/site-content':
+            payload = self.read_json()
+            content = payload.get('content')
+            if not isinstance(content, dict):
+                self.send_json({'success': False, 'message': 'Invalid content payload.'}, 400)
+                return
+            save_site_content({
+                'content': content,
+                'updatedAt': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+            })
+            self.send_json({'success': True})
+            return
 
         if path == '/api/users/update':
             payload = self.read_json()
@@ -125,6 +179,18 @@ class SiteHandler(SimpleHTTPRequestHandler):
     def do_POST(self):
         path = urlparse(self.path).path
         payload = self.read_json()
+
+        if path == '/api/upload':
+            try:
+                url = save_uploaded_image(payload.get('data'))
+            except ValueError as err:
+                self.send_json({'success': False, 'message': str(err)}, 400)
+                return
+            except Exception:
+                self.send_json({'success': False, 'message': 'Upload failed.'}, 500)
+                return
+            self.send_json({'success': True, 'url': url})
+            return
 
         if path == '/api/auth/signup':
             name = (payload.get('name') or '').strip()
@@ -199,7 +265,8 @@ def main():
 
     print(f'HN Handicraft site running at http://localhost:{PORT}', flush=True)
     print(f'On your phone (same Wi-Fi): http://<your-pc-ip>:{PORT}', flush=True)
-    print('Accounts are shared across all devices using this server.', flush=True)
+    print('Accounts, offers, products, and uploads sync via data/site-content.json', flush=True)
+    print('Uploaded images are saved to assets/uploads/', flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

@@ -7,5 +7,5 @@ module.exports = async (req, res) => {
     return;
   }
   const status = await getStorageStatus();
-  sendJson(res, { ok: true, ...status });
+  sendJson(res, { ok: true, siteSync: true, ...status });
 };
