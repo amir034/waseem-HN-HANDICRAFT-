@@ -35,8 +35,8 @@
           "createdAt": "2026-06-25T19:49:46.496Z"
         }
       ],
-      "loginCount": 6,
-      "lastLogin": "2026-06-26T06:19:10.855904Z",
+      "loginCount": 11,
+      "lastLogin": "2026-07-05T11:23:31.382717Z",
       "createdAt": "2026-06-25T11:29:48.479878Z",
       "stockAlerts": [
         {
@@ -46,6 +46,64 @@
           "createdAt": "2026-06-25T19:53:09.245Z"
         }
       ]
+    },
+    {
+      "id": "user_1783065493876",
+      "name": "Test User",
+      "email": "user_random123@gmail.com",
+      "password": "password123",
+      "addresses": [],
+      "loginCount": 1,
+      "lastLogin": "2026-07-03T07:58:13.876Z",
+      "createdAt": "2026-07-03T07:58:13.876Z"
+    },
+    {
+      "id": "user_1783067949943",
+      "name": "Artisan Tester",
+      "email": "aaa@gmail.com",
+      "password": "123321123",
+      "addresses": [],
+      "loginCount": 2,
+      "lastLogin": "2026-07-03T08:39:09.952Z",
+      "createdAt": "2026-07-03T08:39:09.948166Z"
     }
-  ]
+  ],
+  "pending_otps": {
+    "hnhandicraft-tester@gmail.com": {
+      "otp": "245651",
+      "name": "Artisan Tester",
+      "password": "password123",
+      "expiresAt": 1783066993595
+    },
+    "amirch45321@gmail.com": {
+      "otp": "877589",
+      "name": "amir",
+      "password": "123qweasd",
+      "expiresAt": 1783068129543
+    },
+    "amich45321@gmail.com": {
+      "otp": "570520",
+      "name": "amir",
+      "password": "123321123",
+      "expiresAt": 1783067059678
+    },
+    "test_random_12345@gmail.com": {
+      "otp": "927819",
+      "name": "Artisan Tester",
+      "password": "password123",
+      "expiresAt": 1783067799863
+    },
+    "test_new_user@gmail.com": {
+      "otp": "528338",
+      "name": "Artisan Tester",
+      "password": "password123",
+      "expiresAt": 1783067896853
+    },
+    "test_new_user_2@gmail.com": {
+      "otp": "262458",
+      "name": "Artisan Tester",
+      "password": "password123",
+      "expiresAt": 1783067969894
+    }
+  }
 }

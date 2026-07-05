@@ -43,7 +43,7 @@ function migrateLegacyCart(email) {
   localStorage.setItem(userKey, JSON.stringify(userCart));
 }
 
-function addToCart(productId, quantity = 1) {
+function addToCart(productId, quantity = 1, forceSet = false) {
   if (typeof isCustomerLoggedIn === 'function' && !isCustomerLoggedIn()) {
     if (typeof showAccountRequiredModal === 'function') {
       showAccountRequiredModal();
@@ -59,7 +59,11 @@ function addToCart(productId, quantity = 1) {
   const cart = getCart();
   const existing = cart.find(item => item.productId === product.id);
   if (existing) {
-    existing.quantity += quantity;
+    if (forceSet) {
+      existing.quantity = quantity;
+    } else {
+      existing.quantity += quantity;
+    }
   } else {
     cart.push({ productId: product.id, quantity });
   }
@@ -163,13 +167,19 @@ function createOrder(userEmail, addressDetails) {
   const subtotal = getCartTotal();
   const shipping = subtotal >= 3000 ? 0 : 150;
 
+  // Read promo from checkoutState if available
+  const appliedPromo = typeof checkoutState !== 'undefined' ? (checkoutState.appliedPromo || '') : '';
+  const promoDiscount = typeof checkoutState !== 'undefined' ? (checkoutState.promoDiscount || 0) : 0;
+
   const order = {
     id: generateOrderId(),
     userEmail,
     items,
     subtotal,
     shipping,
-    total: subtotal + shipping,
+    appliedPromo,
+    promoDiscount,
+    total: Math.max(0, subtotal - promoDiscount) + shipping,
     addressDetails,
     shippingAddress: addressDetails.formatted,
     status: 'confirmed',
@@ -186,6 +196,12 @@ function createOrder(userEmail, addressDetails) {
   orders.unshift(order);
   saveOrders(orders);
   clearCart();
+
+  // Reset promo state
+  if (typeof checkoutState !== 'undefined') {
+    checkoutState.appliedPromo = '';
+    checkoutState.promoDiscount = 0;
+  }
 
   return order;
 }

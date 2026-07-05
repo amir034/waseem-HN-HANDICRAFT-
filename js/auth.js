@@ -6,6 +6,8 @@ const ADMIN_PASSWORD = '123321';
 const API_TIMEOUT_MS = 4000;
 const SERVER_TIP = 'Open this site from your Vercel URL or run a local web server — login does not work when opening HTML files directly';
 
+
+
 let authSyncReady = null;
 
 function startAuthSync() {
@@ -266,6 +268,7 @@ async function signup(name, email, password) {
     return { success: false, message: 'Please enter your full name.' };
   }
 
+  // Try server-side signup first
   if (await isApiAvailable()) {
     try {
       const res = await fetchWithTimeout('/api/auth/signup', {
@@ -274,31 +277,27 @@ async function signup(name, email, password) {
         body: JSON.stringify({ name: name.trim(), email, password })
       });
       const data = await res.json();
-      if (data.success && data.user) {
-        upsertLocalUser({ ...data.user, password }, password);
-        localStorage.setItem(SESSION_KEY, email);
-        localStorage.removeItem(ADMIN_SESSION_KEY);
-        if (typeof migrateLegacyCart === 'function') migrateLegacyCart(email);
-        if (typeof updateCartCount === 'function') updateCartCount();
-        if (data.savedToServer === false) {
-          sessionStorage.setItem(
-            'hc_signup_notice',
-            'Account saved on this device. Connect Blob to your Vercel project and redeploy for login on all devices.'
-          );
-        }
-        return { success: true };
+      if (!data.success) {
+        return { success: false, message: data.message };
       }
-      if (res.status === 409 || res.status === 400) {
-        return { success: false, message: data.message || 'Could not create account.' };
-      }
+      // Sync to local storage
+      upsertLocalUser({ ...data.user, password }, password);
+      localStorage.setItem(SESSION_KEY, email);
+      localStorage.removeItem(ADMIN_SESSION_KEY);
+      recordUserLogin(email);
+      if (typeof migrateLegacyCart === 'function') migrateLegacyCart(email);
+      if (typeof updateCartCount === 'function') updateCartCount();
+      return { success: true };
     } catch {
-      /* fall back to local signup */
+      /* fall through to local signup */
     }
   }
 
+  // Fallback: local-only signup
   const local = signupLocal(name, email, password);
   if (local.success && await isApiAvailable()) {
-    syncUserToServer(getUsers().find(u => normalizeEmail(u.email) === email));
+    const fullUser = getUsers().find(u => normalizeEmail(u.email) === email);
+    if (fullUser) syncUserToServer(fullUser);
   }
   return local;
 }

@@ -17,6 +17,9 @@
       <span>Admin Panel</span>
     </div>
     <nav class="admin-nav">
+      <a href="index.html" class="admin-tab" style="text-decoration:none; text-align:left; display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.04); margin-bottom:10px; border-radius:4px; font-weight:500;">
+        <span style="font-size:1.1rem; line-height:1; position:relative; top:-1px;">⌂</span> View Storefront
+      </a>
       <button class="admin-tab active" data-tab="products">Products</button>
       <button class="admin-tab" data-tab="orders">Orders</button>
       <button class="admin-tab" data-tab="shipment">Shipment</button>
@@ -25,6 +28,7 @@
       <button class="admin-tab" data-tab="hero">Hero Banner</button>
       <button class="admin-tab" data-tab="artisans">Artisans</button>
       <button class="admin-tab" data-tab="announcements">Announcements</button>
+      <button class="admin-tab" data-tab="promo">Promo Codes</button>
     </nav>
     <button class="admin-logout-btn" id="admin-logout">Logout</button>
   </aside>
@@ -126,19 +130,36 @@
       </div>
       <div id="admin-announcements-content"></div>
     </div>
+
+    <div class="admin-panel" id="panel-promo">
+      <div class="admin-panel-heading">
+        <h2>Promo Codes</h2>
+        <p>Manage promo codes, discount percentages, and assign them to specific products.</p>
+      </div>
+      <div id="admin-promo-content"></div>
+    </div>
   </main>
 
-  <!-- Add Category Modal -->
+  <!-- Add/Edit Category Modal -->
   <div class="admin-modal" id="category-modal">
     <div class="admin-modal-content">
       <button class="admin-modal-close" data-close-modal>&times;</button>
-      <h3>Add New Category</h3>
+      <h3 id="category-modal-title">Add New Category</h3>
       <form id="category-form">
+        <input type="hidden" id="category-edit-id" value="">
         <div class="form-group">
           <label for="category-name">Category Name</label>
           <input type="text" id="category-name" placeholder="e.g. Glass Items" required>
         </div>
-        <button type="submit" class="btn btn-primary btn-full">Create Category</button>
+        <div class="form-group">
+          <label for="category-img-url">Category Image URL</label>
+          <input type="text" id="category-img-url" placeholder="e.g. assets/images/category-glass.jpg">
+        </div>
+        <div class="form-group">
+          <label>Or Upload Category Image</label>
+          <input type="file" id="category-img-file" accept="image/*" style="padding:8px 0; border:none; background:none; font-size:0.85rem;">
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="category-submit-btn">Save Category</button>
       </form>
     </div>
   </div>
@@ -242,6 +263,17 @@
             <input type="number" id="edit-offer" min="1" placeholder="Optional">
           </div>
         </div>
+        <div class="form-row" style="margin-top:12px; background: rgba(194, 153, 88, 0.05); padding: 12px; border-radius: 4px; border: 1px solid rgba(194, 153, 88, 0.15); display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group" style="margin-bottom:0; display:flex; align-items:center;">
+            <label class="admin-checkbox" style="margin:0;">
+              <input type="checkbox" id="edit-promo-enabled"> Enable Promo Code
+            </label>
+          </div>
+          <div class="form-group" style="margin-bottom:0;" id="edit-promo-select-group">
+            <label for="edit-promo-code" style="font-size: 0.8rem; font-weight: 500; margin-bottom: 4px; display: block;">Select Promo Code</label>
+            <select id="edit-promo-code" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-family:inherit;"></select>
+          </div>
+        </div>
         <label class="admin-checkbox">
           <input type="checkbox" id="edit-sold-out"> Mark as Sold Out
         </label>
@@ -296,7 +328,7 @@
   <script src="js/content.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/cart.js"></script>
-  <script src="js/admin.js"></script>
+  <script src="js/admin.js?v=2"></script>
   <script src="js/site-boot.js"></script>
 </body>
 </html>

@@ -73,6 +73,9 @@ function getSiteFooterHtml() {
           <a href="mailto:${SITE_CONTACT_EMAIL}" data-contact-email>${SITE_CONTACT_EMAIL}</a>
           <a href="tel:+${SITE_WHATSAPP_E164}" data-whatsapp-phone>${getWhatsAppDisplayNumber()}</a>
           <a href="${getWhatsAppUrl()}" data-whatsapp-link target="_blank" rel="noopener">WhatsApp Us</a>
+          <p style="font-size:0.8rem; line-height:1.6; color:rgba(255,255,255,0.7); margin-top:12px; margin-bottom:12px; font-family:var(--font-body);">
+            Shafiabad Loti, Hapur - Kithore Road, Meerut, U.P - 250104
+          </p>
           <div class="social-icons-mount contact-social"></div>
         </div>
       </div>

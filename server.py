@@ -77,6 +77,46 @@ def find_user(users, email):
     return None
 
 
+def send_otp_email(to_email, otp_code):
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    
+    try:
+        sender_email = 'hnhandicraftO@gmail.com'
+        sender_password = 'W8869052132w@'
+        
+        msg = MIMEMultipart()
+        msg['From'] = f'"HN Handicraft" <{sender_email}>'
+        msg['To'] = to_email
+        msg['Subject'] = f"{otp_code} is your HN Handicraft verification code"
+        
+        body = f"""
+        <div style="max-width: 500px; margin: 0 auto; background: #faf9f6; padding: 30px; border-radius: 12px; border: 1px solid #e2ded5; font-family: Arial, sans-serif; color: #333;">
+          <h2 style="color: #c29d5f; text-align: center; font-family: 'Times New Roman', Times, serif;">HN Handicraft</h2>
+          <hr style="border: 0; border-top: 1px solid #e2ded5; margin: 20px 0;">
+          <p>Hello,</p>
+          <p>Thank you for registering with HN Handicraft. Please use the following One-Time Password (OTP) to verify your email address:</p>
+          <div style="font-size: 28px; font-weight: bold; letter-spacing: 4px; text-align: center; margin: 30px 0; color: #222;">
+            {otp_code}
+          </div>
+          <p style="font-size: 12px; color: #666; text-align: center;">This code will expire in 10 minutes. If you did not request this, please ignore this email.</p>
+        </div>
+        """
+        msg.attach(MIMEText(body, 'html'))
+        
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, to_email, msg.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Error sending email: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        return False
+
+
 class SiteHandler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ROOT, **kwargs)
@@ -190,6 +230,106 @@ class SiteHandler(SimpleHTTPRequestHandler):
                 self.send_json({'success': False, 'message': 'Upload failed.'}, 500)
                 return
             self.send_json({'success': True, 'url': url})
+            return
+
+        if path == '/api/auth/send-otp':
+            name = (payload.get('name') or '').strip()
+            email = normalize_email(payload.get('email'))
+            password = payload.get('password') or ''
+
+            if not name or not email or not password:
+                self.send_json({'success': False, 'message': 'All fields are required.'}, 400)
+                return
+            if email == ADMIN_EMAIL:
+                self.send_json({'success': False, 'message': 'This email is reserved for admin use.'}, 400)
+                return
+            if len(password) < 6:
+                self.send_json({'success': False, 'message': 'Password must be at least 6 characters.'}, 400)
+                return
+            if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$', email):
+                self.send_json({'success': False, 'message': 'Please enter a valid email address.'}, 400)
+                return
+
+            store = load_store()
+            users = store.setdefault('users', [])
+            if find_user(users, email):
+                self.send_json({'success': False, 'message': 'An account with this email already exists.'}, 409)
+                return
+
+            # Generate OTP
+            import random
+            otp = str(random.randint(100000, 999999))
+            expires_at = int(time.time() * 1000) + 10 * 60 * 1000  # 10 minutes
+
+            pending_otps = store.setdefault('pending_otps', {})
+            pending_otps[email] = {
+                'otp': otp,
+                'name': name,
+                'password': password,
+                'expiresAt': expires_at
+            }
+            save_store(store)
+
+            # Send Email
+            sent = send_otp_email(email, otp)
+            if sent:
+                self.send_json({'success': True})
+            else:
+                print(f"\n[DEVELOPMENT FALLBACK] Gmail SMTP failed to send. Developer OTP code for {email} is: {otp}\n", flush=True)
+                self.send_json({'success': True, 'devModeOtp': otp})
+            return
+
+        if path == '/api/auth/verify-otp':
+            email = normalize_email(payload.get('email'))
+            otp = (payload.get('otp') or '').strip()
+
+            if not email or not otp:
+                self.send_json({'success': False, 'message': 'Email and OTP are required.'}, 400)
+                return
+
+            store = load_store()
+            pending_otps = store.setdefault('pending_otps', {})
+            pending = pending_otps.get(email)
+
+            if not pending:
+                self.send_json({'success': False, 'message': 'No registration request found or OTP expired.'}, 400)
+                return
+
+            if pending.get('otp') != otp:
+                self.send_json({'success': False, 'message': 'Invalid verification code.'}, 400)
+                return
+
+            current_time = int(time.time() * 1000)
+            if current_time > pending.get('expiresAt', 0):
+                del pending_otps[email]
+                save_store(store)
+                self.send_json({'success': False, 'message': 'Verification code has expired.'}, 400)
+                return
+
+            # Create User
+            users = store.setdefault('users', [])
+            if find_user(users, email):
+                self.send_json({'success': False, 'message': 'An account with this email already exists.'}, 409)
+                return
+
+            user = {
+                'id': 'user_' + str(int(time.time() * 1000)),
+                'name': pending.get('name'),
+                'email': email,
+                'password': pending.get('password'),
+                'addresses': [],
+                'loginCount': 1,
+                'lastLogin': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z'),
+                'createdAt': datetime.now(timezone.utc).isoformat().replace('+00:00', 'Z')
+            }
+            users.append(user)
+
+            # Clear pending OTP
+            del pending_otps[email]
+            save_store(store)
+
+            safe = {k: v for k, v in user.items() if k != 'password'}
+            self.send_json({'success': True, 'user': safe})
             return
 
         if path == '/api/auth/signup':

@@ -27,20 +27,74 @@ function bindAdminEvents() {
   });
 
   document.getElementById('add-category-btn').addEventListener('click', () => {
+    document.getElementById('category-modal-title').textContent = 'Add New Category';
+    document.getElementById('category-submit-btn').textContent = 'Create Category';
+    document.getElementById('category-edit-id').value = '';
+    document.getElementById('category-name').value = '';
+    document.getElementById('category-img-url').value = '';
+    document.getElementById('category-img-file').value = '';
     document.getElementById('category-modal').classList.add('open');
   });
 
   document.getElementById('category-form').addEventListener('submit', (e) => {
     e.preventDefault();
+    const editId = document.getElementById('category-edit-id').value;
     const label = document.getElementById('category-name').value.trim();
-    const result = addCategory(label);
-    if (result.success) {
-      document.getElementById('category-modal').classList.remove('open');
-      document.getElementById('category-name').value = '';
-      renderProductsTab();
-      showToast('Category added: ' + result.category.label);
+    const imageUrlInput = document.getElementById('category-img-url').value.trim();
+    const fileInput = document.getElementById('category-img-file');
+    
+    const saveCat = (imgUrl) => {
+      if (editId) {
+        const result = updateCategory(editId, label, imgUrl);
+        if (result.success) {
+          document.getElementById('category-modal').classList.remove('open');
+          renderProductsTab();
+          showToast('Section updated successfully!');
+          if (typeof pushSiteContentToServer === 'function') pushSiteContentToServer();
+        } else {
+          showToast(result.message);
+        }
+      } else {
+        const result = addCategory(label, imgUrl);
+        if (result.success) {
+          document.getElementById('category-modal').classList.remove('open');
+          document.getElementById('category-name').value = '';
+          document.getElementById('category-img-url').value = '';
+          fileInput.value = '';
+          renderProductsTab();
+          showToast('Category added: ' + result.category.label);
+          if (typeof pushSiteContentToServer === 'function') pushSiteContentToServer();
+        } else {
+          showToast(result.message);
+        }
+      }
+    };
+
+    if (fileInput.files && fileInput.files[0]) {
+      showToast('Uploading category image...');
+      readAndCropImageFile(fileInput.files[0], (uploadedUrl) => {
+        saveCat(uploadedUrl);
+      });
     } else {
-      showToast(result.message);
+      saveCat(imageUrlInput);
+    }
+  });
+
+  // Delegate Edit Category button click
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('edit-category-btn')) {
+      const catId = e.target.dataset.categoryId;
+      const categories = getCategories();
+      const cat = categories.find(c => c.id === catId);
+      if (!cat) return;
+
+      document.getElementById('category-modal-title').textContent = 'Edit Section: ' + cat.label;
+      document.getElementById('category-submit-btn').textContent = 'Save Changes';
+      document.getElementById('category-edit-id').value = cat.id;
+      document.getElementById('category-name').value = cat.label;
+      document.getElementById('category-img-url').value = cat.image || '';
+      document.getElementById('category-img-file').value = '';
+      document.getElementById('category-modal').classList.add('open');
     }
   });
 
@@ -57,6 +111,15 @@ function bindAdminEvents() {
   document.getElementById('edit-form').addEventListener('submit', (e) => {
     e.preventDefault();
     saveProductEdit();
+  });
+
+  document.getElementById('edit-promo-enabled').addEventListener('change', (e) => {
+    const promoSelectGroup = document.getElementById('edit-promo-select-group');
+    const promoSelect = document.getElementById('edit-promo-code');
+    if (promoSelectGroup && promoSelect) {
+      promoSelectGroup.style.opacity = e.target.checked ? '1' : '0.5';
+      promoSelect.disabled = !e.target.checked;
+    }
   });
 
   document.getElementById('edit-image-url').addEventListener('blur', () => {
@@ -115,6 +178,7 @@ function switchTab(tab) {
   if (tab === 'hero') renderHeroTab();
   if (tab === 'artisans') renderArtisansTab();
   if (tab === 'announcements') renderAnnouncementsTab();
+  if (tab === 'promo') renderPromoTab();
   renderStats();
 }
 
@@ -156,7 +220,6 @@ function renderStats() {
 }
 
 function renderProductsTab() {
-  renderStats();
   const container = document.getElementById('admin-products');
   const categories = getCategories();
   const products = getProducts();
@@ -165,9 +228,10 @@ function renderProductsTab() {
     const catProducts = products.filter(p => p.category === cat.id);
     return `
       <div class="admin-category-section">
-        <div class="admin-category-header">
-          <h3>${cat.label}</h3>
-          <span class="admin-category-count">${catProducts.length} products</span>
+        <div class="admin-category-header" style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+          <h3 style="margin:0;">${cat.label}</h3>
+          <button type="button" class="btn btn-outline-accent btn-sm edit-category-btn" data-category-id="${cat.id}" style="padding:4px 8px; font-size:0.7rem; line-height:1; border-radius:4px; height:auto; cursor:pointer; font-weight:500;">Edit Section</button>
+          <span class="admin-category-count" style="margin-left:auto;">${catProducts.length} products</span>
         </div>
         <div class="admin-product-grid">
           ${catProducts.map(p => renderAdminProductCard(p)).join('')}
@@ -472,6 +536,24 @@ function openEditModal(id) {
   document.getElementById('edit-image-url').value = product.image.startsWith('data:') ? '' : product.image;
   document.getElementById('edit-image-file').value = '';
   document.getElementById('edit-extra-images').value = '';
+
+  // Populate promos select
+  const promos = getPromos();
+  const promoSelect = document.getElementById('edit-promo-code');
+  if (promos.length === 0) {
+    promoSelect.innerHTML = '<option value="">No promo codes created</option>';
+  } else {
+    promoSelect.innerHTML = promos.map(p => `<option value="${p.code}">${p.code} (${p.discount}% OFF)</option>`).join('');
+  }
+
+  const promoEnabled = product.promoEnabled === true;
+  document.getElementById('edit-promo-enabled').checked = promoEnabled;
+  if (product.promoCode) {
+    promoSelect.value = product.promoCode;
+  }
+  document.getElementById('edit-promo-select-group').style.opacity = promoEnabled ? '1' : '0.5';
+  promoSelect.disabled = !promoEnabled;
+
   renderEditImageGallery();
 
   const editModal = document.getElementById('edit-modal');
@@ -644,10 +726,15 @@ function saveProductEdit() {
     return;
   }
 
+  const promoEnabled = document.getElementById('edit-promo-enabled').checked;
+  const promoCode = promoEnabled ? document.getElementById('edit-promo-code').value : '';
+
   const updates = {
     name, price, offerPrice, description, inStock,
     image: editMainImage,
-    images: editExtraImages.slice(0, MAX_PRODUCT_IMAGES - 1)
+    images: editExtraImages.slice(0, MAX_PRODUCT_IMAGES - 1),
+    promoEnabled,
+    promoCode
   };
 
   updateProduct(editProductId, updates);
@@ -1494,6 +1581,10 @@ function renderAnnouncementsTab() {
 
   const messages = getAnnouncements();
   const offer = getOfferPopup();
+  const welcome = typeof getWelcomeSection === 'function' ? getWelcomeSection() : {
+    title: 'Shop Now',
+    text: 'Welcome to HN Handicraft, where tradition meets innovation. We proudly present a curated selection of our finest handcrafted creations, meticulously crafted by skilled artisans from across India.'
+  };
 
   container.innerHTML = `
     <div class="admin-artisan-form-card admin-announcements-card">
@@ -1562,6 +1653,22 @@ function renderAnnouncementsTab() {
           <input type="text" id="offer-button-link" value="${escapeAttr(offer.buttonLink || 'shop.html')}" placeholder="shop.html">
         </div>
         <button type="submit" class="btn btn-primary">Save Offer Popup</button>
+      </form>
+    </div>
+
+    <div class="admin-artisan-form-card admin-welcome-section-card" style="margin-top:30px;">
+      <h3>Homepage Welcome Text</h3>
+      <p class="wizard-hint">Edit the introduction heading and paragraph shown immediately below the banner slideshow on the homepage.</p>
+      <form id="welcome-section-form">
+        <div class="form-group">
+          <label for="welcome-title">Intro Heading *</label>
+          <input type="text" id="welcome-title" value="${escapeAttr(welcome.title)}" placeholder="e.g. Shop Now" required style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+        </div>
+        <div class="form-group">
+          <label for="welcome-text">Intro Text *</label>
+          <textarea id="welcome-text" rows="4" required placeholder="Describe your store..." style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; font-family:inherit;">${escapeHtml(welcome.text)}</textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">Save Welcome Text</button>
       </form>
     </div>
   `;
@@ -1647,6 +1754,259 @@ function renderAnnouncementsTab() {
       pushSiteContentToServer();
     }
     showToast('Offer popup saved!');
+  });
+
+  document.getElementById('welcome-section-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title = document.getElementById('welcome-title').value.trim();
+    const text = document.getElementById('welcome-text').value.trim();
+    if (!title || !text) {
+      showToast('Please fill all fields.');
+      return;
+    }
+    saveWelcomeSection({ title, text });
+    if (typeof pushSiteContentToServer === 'function') {
+      pushSiteContentToServer();
+    }
+    showToast('Homepage welcome text saved!');
+  });
+}
+
+function renderPromoTab() {
+  const container = document.getElementById('admin-promo-content');
+  if (!container) return;
+
+  const promos = getPromos();
+  const products = getProducts();
+
+  const productCheckboxesHtml = products.map(p => {
+    return `
+      <label style="display:flex !important; align-items:center !important; gap:12px !important; font-size:0.85rem !important; background:#f9f9f9 !important; padding:8px 12px !important; border-radius:6px !important; border:1px solid #eee !important; cursor:pointer !important; width:100% !important; box-sizing:border-box !important; text-transform:none !important; letter-spacing:normal !important; margin-bottom:0 !important; color:#333 !important;">
+        <input type="checkbox" name="promo-products" value="${p.id}" style="width:18px !important; height:18px !important; margin:0 !important; padding:0 !important; flex-shrink:0 !important; position:static !important;">
+        <img src="${p.image}" alt="${escapeAttr(p.name)}" style="width:36px !important; height:36px !important; object-fit:cover !important; border-radius:4px !important; border:1px solid #ddd !important; flex-shrink:0 !important;">
+        <div style="display:flex !important; flex-direction:column !important; overflow:hidden !important; flex:1 !important; text-align:left !important; gap:2px !important;">
+          <strong style="font-size:0.75rem !important; color:#888 !important; text-transform:none !important; letter-spacing:normal !important; font-weight:normal !important;">${p.productCode}</strong>
+          <span style="overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; font-weight:500 !important; color:#333 !important; text-transform:none !important; letter-spacing:normal !important;" title="${escapeAttr(p.name)}">${escapeAttr(p.name)}</span>
+        </div>
+      </label>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <style>
+      .admin-promo-grid-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 30px;
+        margin-top: 20px;
+      }
+      @media (max-width: 900px) {
+        .admin-promo-grid-layout {
+          grid-template-columns: 1fr !important;
+          gap: 20px !important;
+        }
+      }
+    </style>
+    <div class="admin-promo-grid-layout">
+      <div style="background:#fff; padding:20px; border-radius:8px; border:1px solid #e2ded5; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+        <h3 style="font-family:var(--font-display); font-size:1.2rem; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;" id="promo-form-title">Add New Promo Code</h3>
+        <form id="admin-promo-form">
+          <input type="hidden" id="promo-edit-mode" value="create">
+          <div class="form-group">
+            <label for="promo-code">Promo Code Name *</label>
+            <input type="text" id="promo-code" placeholder="e.g. FESTIVE10" required style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px; text-transform:uppercase;">
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label for="promo-discount">Discount Percentage (%) *</label>
+            <input type="number" id="promo-discount" min="1" max="100" placeholder="e.g. 10" required style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+          </div>
+          <div class="form-group" style="margin-top:12px;">
+            <label style="display:block; margin-bottom:6px; font-weight:500;">Select Applicable Products *</label>
+            <div style="display:flex; gap:10px; margin-bottom:8px;">
+              <button type="button" class="btn btn-outline-accent btn-sm" id="promo-select-all" style="padding:4px 8px; font-size:0.75rem;">Select All</button>
+              <button type="button" class="btn btn-outline-accent btn-sm" id="promo-deselect-all" style="padding:4px 8px; font-size:0.75rem;">Clear All</button>
+            </div>
+            <div class="promo-product-select-grid" style="display:grid; grid-template-columns:1fr; gap:8px; max-height:220px; overflow-y:auto; overflow-x:hidden !important; border:1px solid #ccc; padding:10px; border-radius:4px; background:#fff; box-sizing:border-box;">
+              ${productCheckboxesHtml}
+            </div>
+          </div>
+          <div style="margin-top:20px; display:flex; gap:10px;">
+            <button type="submit" class="btn btn-primary" id="promo-submit-btn" style="flex:1;">Create Promo Code</button>
+            <button type="button" class="btn btn-secondary" id="promo-cancel-btn" style="display:none; padding:10px 16px;">Cancel</button>
+          </div>
+        </form>
+      </div>
+
+      <div style="background:#fff; padding:20px; border-radius:8px; border:1px solid #e2ded5; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+        <h3 style="font-family:var(--font-display); font-size:1.2rem; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">Active Promo Codes</h3>
+        <div id="admin-promo-list" style="display:flex; flex-direction:column; gap:12px;"></div>
+      </div>
+    </div>
+  `;
+
+  const form = document.getElementById('admin-promo-form');
+  const codeInput = document.getElementById('promo-code');
+  const discountInput = document.getElementById('promo-discount');
+  const submitBtn = document.getElementById('promo-submit-btn');
+  const cancelBtn = document.getElementById('promo-cancel-btn');
+  const formTitle = document.getElementById('promo-form-title');
+  const editModeInput = document.getElementById('promo-edit-mode');
+
+  document.getElementById('promo-select-all').addEventListener('click', () => {
+    document.querySelectorAll('input[name="promo-products"]').forEach(cb => cb.checked = true);
+  });
+  document.getElementById('promo-deselect-all').addEventListener('click', () => {
+    document.querySelectorAll('input[name="promo-products"]').forEach(cb => cb.checked = false);
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const code = codeInput.value.trim().toUpperCase();
+    const discount = parseInt(discountInput.value, 10);
+    const selectedProductIds = Array.from(document.querySelectorAll('input[name="promo-products"]:checked')).map(cb => cb.value);
+
+    if (!code || isNaN(discount) || discount < 1 || discount > 100) {
+      showToast('Please enter a valid code and discount.');
+      return;
+    }
+
+    let promos = getPromos();
+    const isEdit = editModeInput.value === 'edit';
+
+    if (isEdit) {
+      const idx = promos.findIndex(p => p.code === code);
+      if (idx !== -1) {
+        promos[idx].discount = discount;
+      }
+    } else {
+      if (promos.find(p => p.code === code)) {
+        showToast('Promo code already exists.');
+        return;
+      }
+      promos.push({ code, discount });
+    }
+
+    savePromos(promos);
+
+    const allProducts = getProducts();
+    allProducts.forEach(prod => {
+      if (selectedProductIds.includes(prod.id)) {
+        prod.promoEnabled = true;
+        prod.promoCode = code;
+      } else {
+        if (prod.promoCode === code) {
+          prod.promoEnabled = false;
+          prod.promoCode = '';
+        }
+      }
+    });
+    saveProducts(allProducts);
+
+    form.reset();
+    editModeInput.value = 'create';
+    formTitle.textContent = 'Add New Promo Code';
+    submitBtn.textContent = 'Create Promo Code';
+    cancelBtn.style.display = 'none';
+    codeInput.disabled = false;
+
+    renderPromoTab();
+    showToast(isEdit ? 'Promo code updated!' : 'Promo code created successfully!');
+    if (typeof pushSiteContentToServer === 'function') {
+      pushSiteContentToServer();
+    }
+  });
+
+  cancelBtn.addEventListener('click', () => {
+    form.reset();
+    editModeInput.value = 'create';
+    formTitle.textContent = 'Add New Promo Code';
+    submitBtn.textContent = 'Create Promo Code';
+    cancelBtn.style.display = 'none';
+    codeInput.disabled = false;
+  });
+
+  renderPromoList(promos);
+}
+
+function renderPromoList(promos) {
+  const listContainer = document.getElementById('admin-promo-list');
+  if (!listContainer) return;
+
+  if (promos.length === 0) {
+    listContainer.innerHTML = '<p style="color:#888; text-align:center; padding:30px 0;">No active promo codes.</p>';
+    return;
+  }
+
+  const products = getProducts();
+
+  listContainer.innerHTML = promos.map(p => {
+    const assignedProducts = products.filter(prod => prod.promoEnabled && prod.promoCode === p.code);
+    const assignedNames = assignedProducts.map(prod => prod.name).join(', ');
+
+    return `
+      <div style="border:1px solid #e2ded5; padding:15px; border-radius:6px; background:#faf9f6; display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong style="font-size:1.1rem; color:var(--color-header);">${p.code}</strong>
+            <span style="background:var(--color-accent); color:white; font-size:0.75rem; padding:2px 8px; border-radius:12px; margin-left:10px; font-weight:600;">${p.discount}% OFF</span>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button type="button" class="btn btn-outline-accent btn-sm edit-promo-btn" data-code="${p.code}" data-discount="${p.discount}" style="padding:4px 10px; font-size:0.75rem;">Edit</button>
+            <button type="button" class="btn btn-sm delete-promo-btn" data-code="${p.code}" style="padding:4px 10px; font-size:0.75rem; background:#c0392b; color:white; border-color:#c0392b;">Delete</button>
+          </div>
+        </div>
+        <div style="font-size:0.8rem; color:#666;">
+          <strong>Applicable to:</strong> ${assignedProducts.length > 0 ? `${assignedProducts.length} product(s)` : 'None'}
+          ${assignedProducts.length > 0 ? `<div style="font-size:0.72rem; color:#888; margin-top:2px; max-height:40px; overflow-y:auto;" title="${escapeAttr(assignedNames)}">${assignedNames}</div>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  listContainer.querySelectorAll('.edit-promo-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.dataset.code;
+      const discount = btn.dataset.discount;
+
+      document.getElementById('promo-code').value = code;
+      document.getElementById('promo-code').disabled = true;
+      document.getElementById('promo-discount').value = discount;
+      document.getElementById('promo-edit-mode').value = 'edit';
+      document.getElementById('promo-form-title').textContent = 'Edit Promo Code: ' + code;
+      document.getElementById('promo-submit-btn').textContent = 'Save Changes';
+      document.getElementById('promo-cancel-btn').style.display = 'block';
+
+      const assignedProductIds = products.filter(prod => prod.promoEnabled && prod.promoCode === code).map(prod => prod.id);
+      document.querySelectorAll('input[name="promo-products"]').forEach(cb => {
+        cb.checked = assignedProductIds.includes(cb.value);
+      });
+    });
+  });
+
+  listContainer.querySelectorAll('.delete-promo-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const code = btn.dataset.code;
+      if (confirm(`Are you sure you want to delete promo code "${code}"?`)) {
+        let promos = getPromos();
+        promos = promos.filter(p => p.code !== code);
+        savePromos(promos);
+
+        const allProducts = getProducts();
+        allProducts.forEach(prod => {
+          if (prod.promoCode === code) {
+            prod.promoEnabled = false;
+            prod.promoCode = '';
+          }
+        });
+        saveProducts(allProducts);
+
+        renderPromoTab();
+        showToast(`Promo code "${code}" deleted.`);
+        if (typeof pushSiteContentToServer === 'function') {
+          pushSiteContentToServer();
+        }
+      }
+    });
   });
 }
 

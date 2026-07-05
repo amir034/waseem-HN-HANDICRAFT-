@@ -48,7 +48,7 @@
       <div class="section-header">
         <h2>You May Also Like</h2>
       </div>
-      <div class="product-grid" id="related-products" data-auto-render="false"></div>
+      <div class="product-grid-scrollable" id="related-products" data-auto-render="false"></div>
     </div>
   </section>
 
@@ -67,13 +67,13 @@
   </nav>
 
   <script src="js/site-sync.js"></script>
-  <script src="js/config.js"></script>
+  <script src="js/config.js?v=3"></script>
   <script src="js/products.js"></script>
   <script src="js/content.js"></script>
-  <script src="js/icons.js"></script>
+  <script src="js/icons.js?v=3"></script>
   <script src="js/auth.js"></script>
   <script src="js/cart.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=5"></script>
   <script src="js/site-boot.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
@@ -122,7 +122,6 @@
           ${thumbsHtml}
         </div>
         <div class="product-detail-info">
-          <p class="product-id-label">${product.productCode}</p>
           <p class="section-label">${getCategoryLabels()[product.category] || product.category}</p>
           <h1>${product.name}</h1>
           <div class="price product-price">${renderPriceHtml(product)}</div>
@@ -182,7 +181,7 @@
 
       if (product.inStock) {
         document.getElementById('add-to-cart').addEventListener('click', (e) => {
-          const added = addToCart(product.id, quantity);
+          const added = addToCart(product.id, quantity, true);
           if (added) {
             const btn = e.currentTarget;
             btn.classList.remove('btn-added');
@@ -192,13 +191,17 @@
           }
         });
         document.getElementById('buy-now').addEventListener('click', () => {
-          if (addToCart(product.id, quantity)) {
+          if (addToCart(product.id, quantity, true)) {
             window.location.href = 'cart.html';
           }
         });
       }
 
-      const related = getProductsByCategory(product.category).filter(p => p.id !== product.id).slice(0, 4);
+      let related = getProductsByCategory(product.category).filter(p => p.id !== product.id);
+      if (related.length < 4) {
+        const otherProducts = getProducts().filter(p => p.id !== product.id && p.category !== product.category);
+        related = [...related, ...otherProducts];
+      }
       const relatedGrid = document.getElementById('related-products');
       relatedGrid.innerHTML = related.map(renderProductCard).join('');
       relatedGrid.querySelectorAll('[data-add-cart]').forEach(btn => {
@@ -214,7 +217,135 @@
           }
         });
       });
+
+      bindZoomEvents();
     });
+
+    function bindZoomEvents() {
+      const galleryMain = document.querySelector('.product-gallery-main');
+      const mainImg = document.getElementById('product-main-image');
+      if (!galleryMain || !mainImg) return;
+
+      // Laptop/Desktop Hover & Follow Zoom (like Amazon)
+      galleryMain.addEventListener('mousemove', (e) => {
+        if (window.matchMedia('(hover: hover)').matches) {
+          const rect = galleryMain.getBoundingClientRect();
+          const x = ((e.clientX - rect.left) / rect.width) * 100;
+          const y = ((e.clientY - rect.top) / rect.height) * 100;
+          mainImg.style.transformOrigin = `${x}% ${y}%`;
+          mainImg.style.transform = 'scale(2.2)';
+        }
+      });
+
+      galleryMain.addEventListener('mouseleave', () => {
+        if (window.matchMedia('(hover: hover)').matches) {
+          mainImg.style.transform = 'scale(1)';
+          mainImg.style.transformOrigin = 'center';
+        }
+      });
+
+      // Mobile Click/Tap to Open Lightbox Zoom
+      galleryMain.addEventListener('click', (e) => {
+        if (e.target.closest('.product-gallery-nav')) return;
+        openLightbox(mainImg.src);
+      });
+    }
+
+    function openLightbox(src) {
+      let lightbox = document.getElementById('image-lightbox');
+      if (!lightbox) {
+        lightbox = document.createElement('div');
+        lightbox.id = 'image-lightbox';
+        lightbox.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 100vh;
+          background: rgba(0,0,0,0.95);
+          z-index: 10000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        `;
+        lightbox.innerHTML = `
+          <button id="lightbox-close" style="
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 2.5rem;
+            cursor: pointer;
+            z-index: 10001;
+            line-height: 1;
+          ">&times;</button>
+          <div id="lightbox-img-container" style="
+            width: 90%;
+            height: 90%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+          ">
+            <img id="lightbox-img" src="${src}" style="
+              max-width: 100%;
+              max-height: 100%;
+              object-fit: contain;
+              transition: transform 0.3s ease;
+              cursor: zoom-in;
+            ">
+          </div>
+        `;
+        document.body.appendChild(lightbox);
+
+        lightbox.addEventListener('click', (e) => {
+          if (e.target.id === 'image-lightbox' || e.target.id === 'lightbox-close' || e.target.id === 'lightbox-img-container') {
+            closeLightbox();
+          }
+        });
+
+        const lightboxImg = document.getElementById('lightbox-img');
+        let isZoomed = false;
+        lightboxImg.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (isZoomed) {
+            lightboxImg.style.transform = 'scale(1)';
+            lightboxImg.style.cursor = 'zoom-in';
+          } else {
+            lightboxImg.style.transform = 'scale(2.5)';
+            lightboxImg.style.cursor = 'zoom-out';
+            
+            const rect = lightboxImg.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            lightboxImg.style.transformOrigin = `${x}% ${y}%`;
+          }
+          isZoomed = !isZoomed;
+        });
+      } else {
+        document.getElementById('lightbox-img').src = src;
+        document.getElementById('lightbox-img').style.transform = 'scale(1)';
+        document.getElementById('lightbox-img').style.cursor = 'zoom-in';
+      }
+
+      lightbox.style.display = 'flex';
+      lightbox.offsetHeight; // Force reflow
+      lightbox.style.opacity = '1';
+    }
+
+    function closeLightbox() {
+      const lightbox = document.getElementById('image-lightbox');
+      if (lightbox) {
+        lightbox.style.opacity = '0';
+        setTimeout(() => {
+          lightbox.style.display = 'none';
+        }, 300);
+      }
+    }
   </script>
 </body>
 </html>

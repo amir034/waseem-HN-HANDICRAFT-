@@ -9,7 +9,9 @@ const SITE_CONTENT_KEYS = [
   'hc_hero_slides',
   'hc_orders',
   'hc_order_counter',
-  'hc_returns'
+  'hc_returns',
+  'hc_promos',
+  'hc_welcome_section'
 ];
 
 let pushTimer = null;
@@ -147,18 +149,30 @@ function warnIfFileProtocol() {
 window.__siteSyncPromise = pullSiteContentFromServer();
 
 window.__siteStoreReady = (async () => {
-  await window.__siteSyncPromise;
+  if (document.readyState === 'loading') {
+    await new Promise((resolve) => document.addEventListener('DOMContentLoaded', resolve));
+  } else {
+    await Promise.resolve();
+  }
+  
   if (typeof initProductStore === 'function') initProductStore();
   if (typeof initContentStore === 'function') initContentStore();
   warnIfFileProtocol();
-  // If server had no data, push existing localStorage data to the server now.
-  // This ensures that data created in one browser (e.g. Cursor) becomes available
-  // to other browsers (Chrome, Brave) that pull from the server.
+  return true;
+})();
+
+window.__siteSyncPromise.then((success) => {
+  if (success) {
+    if (typeof initProductStore === 'function') initProductStore();
+    if (typeof initContentStore === 'function') initContentStore();
+    if (typeof updateAuthUI === 'function') updateAuthUI();
+    if (typeof updateCartCount === 'function') updateCartCount();
+    document.dispatchEvent(new CustomEvent('siteContentUpdated'));
+  }
   if (window.HC_SITE_SYNC && serverWasEmpty) {
     schedulePushSiteContent();
   }
-  return true;
-})();
+});
 
 document.addEventListener('DOMContentLoaded', () => {
   warnIfFileProtocol();

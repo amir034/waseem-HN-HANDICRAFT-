@@ -30,7 +30,35 @@ const DEFAULT_PRODUCTS = [
   { id: 'w6', name: 'Wooden Temple Frame', category: 'wooden', price: 4500, image: 'https://images.unsplash.com/photo-1616486338812-3dadae4b4ace?w=600&h=600&fit=crop', description: 'Ornately carved teak wood temple frame with jaali work. Designed for home mandir or as a decorative wall piece.', inStock: false }
 ];
 
+const PROMOS_KEY = 'hc_promos';
+
+function initPromoStore() {
+  if (!localStorage.getItem(PROMOS_KEY)) {
+    const defaultPromos = [
+      { code: 'CRAFT5', discount: 5 }
+    ];
+    if (typeof safeStorageSet === 'function') {
+      safeStorageSet(PROMOS_KEY, JSON.stringify(defaultPromos));
+    } else {
+      localStorage.setItem(PROMOS_KEY, JSON.stringify(defaultPromos));
+    }
+  }
+}
+
+function getPromos() {
+  return JSON.parse(localStorage.getItem(PROMOS_KEY) || '[]');
+}
+
+function savePromos(promos) {
+  if (typeof safeStorageSet === 'function') {
+    safeStorageSet(PROMOS_KEY, JSON.stringify(promos));
+  } else {
+    localStorage.setItem(PROMOS_KEY, JSON.stringify(promos));
+  }
+}
+
 function initProductStore() {
+  initPromoStore();
   if (!localStorage.getItem(CATEGORIES_KEY)) {
     if (typeof safeStorageSet === 'function') {
       safeStorageSet(CATEGORIES_KEY, JSON.stringify(DEFAULT_CATEGORIES));
@@ -39,12 +67,15 @@ function initProductStore() {
     }
   }
   if (!localStorage.getItem(PRODUCTS_KEY)) {
-    const products = DEFAULT_PRODUCTS.map((p, i) => ({
-      ...p,
-      productCode: 'PROD-' + String(i + 1).padStart(6, '0'),
-      offerPrice: null,
-      createdAt: new Date().toISOString()
-    }));
+    const products = DEFAULT_PRODUCTS.map((p, i) => {
+      const catChar = (p.category || 'X').charAt(0).toUpperCase();
+      return {
+        ...p,
+        productCode: `PROD-${catChar}-${String(i + 1).padStart(3, '0')}`,
+        offerPrice: null,
+        createdAt: new Date().toISOString()
+      };
+    });
     if (typeof safeStorageSet === 'function') {
       safeStorageSet(PRODUCTS_KEY, JSON.stringify(products));
       safeStorageSet(PRODUCT_COUNTER_KEY, String(products.length));
@@ -61,10 +92,14 @@ function migrateProducts() {
   const products = JSON.parse(localStorage.getItem(PRODUCTS_KEY) || '[]');
   let counter = parseInt(localStorage.getItem(PRODUCT_COUNTER_KEY) || '0', 10);
   let changed = false;
+  const newFormatRegex = /^PROD-[A-Z]-\d{3,}$/;
   products.forEach(p => {
-    if (!p.productCode) {
-      counter++;
-      p.productCode = 'PROD-' + String(counter).padStart(6, '0');
+    if (!p.productCode || !newFormatRegex.test(p.productCode)) {
+      const oldCode = p.productCode || '';
+      const match = oldCode.match(/\d+/);
+      const num = match ? parseInt(match[0], 10) : ++counter;
+      const catChar = (p.category || 'X').charAt(0).toUpperCase();
+      p.productCode = `PROD-${catChar}-${String(num).padStart(3, '0')}`;
       if (p.offerPrice === undefined) p.offerPrice = null;
       changed = true;
     }
@@ -106,14 +141,15 @@ function slugify(text) {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 }
 
-function generateProductCode() {
+function generateProductCode(category) {
+  const catChar = (category || 'X').charAt(0).toUpperCase();
   const counter = parseInt(localStorage.getItem(PRODUCT_COUNTER_KEY) || '0', 10) + 1;
   if (typeof safeStorageSet === 'function') {
     safeStorageSet(PRODUCT_COUNTER_KEY, String(counter));
   } else {
     localStorage.setItem(PRODUCT_COUNTER_KEY, String(counter));
   }
-  return 'PROD-' + String(counter).padStart(6, '0');
+  return `PROD-${catChar}-${String(counter).padStart(3, '0')}`;
 }
 
 function generateProductId() {
@@ -187,16 +223,26 @@ function getProductImageCount(product) {
   return getProductImages(product).length;
 }
 
-function addCategory(label) {
+function addCategory(label, image = '') {
   const id = slugify(label);
   if (!id) return { success: false, message: 'Invalid category name.' };
   const categories = getCategories();
   if (categories.find(c => c.id === id)) {
     return { success: false, message: 'Category already exists.' };
   }
-  categories.push({ id, label });
+  categories.push({ id, label, image });
   saveCategories(categories);
-  return { success: true, category: { id, label } };
+  return { success: true, category: { id, label, image } };
+}
+
+function updateCategory(id, label, image = '') {
+  const categories = getCategories();
+  const index = categories.findIndex(c => c.id === id);
+  if (index === -1) return { success: false, message: 'Category not found.' };
+  categories[index].label = label;
+  categories[index].image = image;
+  saveCategories(categories);
+  return { success: true, category: categories[index] };
 }
 
 function addProduct(data) {
@@ -231,4 +277,25 @@ function updateProduct(id, updates) {
 function deleteProduct(id) {
   const products = getProducts().filter(p => p.id !== id && p.productCode !== id);
   saveProducts(products);
+}
+
+const WELCOME_SECTION_KEY = 'hc_welcome_section';
+function getWelcomeSection() {
+  const defaultVal = {
+    title: 'Shop Now',
+    text: 'Welcome to HN Handicraft, where tradition meets innovation. We proudly present a curated selection of our finest handcrafted creations, meticulously crafted by skilled artisans from across India.'
+  };
+  try {
+    const raw = localStorage.getItem(WELCOME_SECTION_KEY);
+    return raw ? JSON.parse(raw) : defaultVal;
+  } catch {
+    return defaultVal;
+  }
+}
+function saveWelcomeSection(data) {
+  if (typeof safeStorageSet === 'function') {
+    safeStorageSet(WELCOME_SECTION_KEY, JSON.stringify(data));
+  } else {
+    localStorage.setItem(WELCOME_SECTION_KEY, JSON.stringify(data));
+  }
 }

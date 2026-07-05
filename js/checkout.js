@@ -3,6 +3,8 @@ let checkoutState = {
   pincode: '',
   pincodeData: null,
   selectedAddressId: null,
+  appliedPromo: '',
+  promoDiscount: 0,
   address: {
     apartment: '',
     lane: '',
@@ -13,6 +15,28 @@ let checkoutState = {
     phone: ''
   }
 };
+
+function getPromoDiscountForCart(promoCodeName) {
+  if (!promoCodeName) return 0;
+  const promos = getPromos();
+  const promo = promos.find(p => p.code === promoCodeName.trim().toUpperCase());
+  if (!promo) return 0;
+
+  const cart = getCart();
+  let discountTotal = 0;
+
+  cart.forEach(item => {
+    const product = getProductById(item.productId);
+    if (product && product.promoEnabled && product.promoCode === promo.code) {
+      const price = getEffectivePrice(product);
+      // discount is percentage, e.g. 5 means 5%
+      const discountAmount = Math.round(price * (promo.discount / 100)) * item.quantity;
+      discountTotal += discountAmount;
+    }
+  });
+
+  return discountTotal;
+}
 
 async function verifyPincode(pincode) {
   if (!/^\d{6}$/.test(pincode)) {

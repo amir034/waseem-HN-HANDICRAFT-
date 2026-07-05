@@ -56,14 +56,14 @@
   </nav>
 
   <script src="js/site-sync.js"></script>
-  <script src="js/config.js"></script>
+  <script src="js/config.js?v=3"></script>
   <script src="js/products.js"></script>
   <script src="js/content.js"></script>
-  <script src="js/icons.js"></script>
+  <script src="js/icons.js?v=3"></script>
   <script src="js/auth.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/checkout.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/app.js?v=5"></script>
   <script src="js/site-boot.js"></script>
   <script>
     function renderCartItems() {
@@ -239,6 +239,53 @@
         });
       }
 
+      const applyPromoBtn = document.getElementById('apply-promo-btn');
+      if (applyPromoBtn) {
+        applyPromoBtn.addEventListener('click', () => {
+          const promoCode = document.getElementById('promo-input').value.trim().toUpperCase();
+          const statusMsg = document.getElementById('promo-status-msg');
+          
+          if (!promoCode) {
+            statusMsg.textContent = 'Please enter a promo code.';
+            statusMsg.style.color = '#c0392b';
+            statusMsg.style.display = 'block';
+            return;
+          }
+
+          const promos = getPromos();
+          const promo = promos.find(p => p.code === promoCode);
+          if (!promo) {
+            statusMsg.textContent = 'Invalid promo code.';
+            statusMsg.style.color = '#c0392b';
+            statusMsg.style.display = 'block';
+            return;
+          }
+
+          const discount = getPromoDiscountForCart(promoCode);
+          if (discount === 0) {
+            statusMsg.textContent = 'This promo code is not applicable to any items in your cart.';
+            statusMsg.style.color = '#c0392b';
+            statusMsg.style.display = 'block';
+            return;
+          }
+
+          checkoutState.appliedPromo = promoCode;
+          checkoutState.promoDiscount = discount;
+          showToast(`Promo code "${promoCode}" applied!`);
+          renderCart();
+        });
+      }
+
+      const removePromoBtn = document.getElementById('remove-promo-btn');
+      if (removePromoBtn) {
+        removePromoBtn.addEventListener('click', () => {
+          checkoutState.appliedPromo = '';
+          checkoutState.promoDiscount = 0;
+          showToast('Promo code removed.');
+          renderCart();
+        });
+      }
+
       document.querySelectorAll('[data-back-step]').forEach(btn => {
         btn.addEventListener('click', () => setCheckoutStep(parseInt(btn.dataset.backStep)));
       });
@@ -268,7 +315,11 @@
       }
 
       const subtotal = getCartTotal();
-      const shipping = getShippingCost(subtotal);
+      const discount = checkoutState.appliedPromo ? getPromoDiscountForCart(checkoutState.appliedPromo) : 0;
+      checkoutState.promoDiscount = discount;
+      const finalSubtotal = Math.max(0, subtotal - discount);
+      const shipping = getShippingCost(finalSubtotal);
+      
       const user = getCurrentUser();
       const savedAddresses = user && !isAdmin() ? getUserAddresses(user.email) : [];
 
@@ -337,9 +388,23 @@
               <div class="review-address-box" id="review-address"></div>
               <div class="review-product-list" id="review-products"></div>
               <div class="summary-row"><span>Subtotal</span><span>${formatPrice(subtotal)}</span></div>
+              ${discount > 0 ? `<div class="summary-row" style="color:#c0392b;"><span>Promo Discount (${checkoutState.appliedPromo})</span><span>-${formatPrice(discount)}</span></div>` : ''}
               <div class="summary-row"><span>Shipping</span><span>${shipping === 0 ? 'Free' : formatPrice(shipping)}</span></div>
-              <div class="summary-row total"><span>Total</span><span>${formatPrice(subtotal + shipping)}</span></div>
-              <button class="btn btn-secondary btn-sm" data-back-step="2" style="margin:16px 0 12px;">← Back</button>
+              <div class="summary-row total"><span>Total</span><span>${formatPrice(finalSubtotal + shipping)}</span></div>
+              
+              <!-- Promo Code Input -->
+              <div class="promo-section" style="margin-top:16px; border-top:1px solid #eee; padding-top:16px; border-bottom:1px solid #eee; padding-bottom:16px; margin-bottom:16px;">
+                <div style="display:flex; gap:8px; align-items:center;">
+                  <input type="text" id="promo-input" placeholder="Promo Code" value="${checkoutState.appliedPromo}" style="flex:1; padding:8px 12px; border:1px solid #ccc; border-radius:4px; text-transform:uppercase;" ${checkoutState.appliedPromo ? 'disabled' : ''}>
+                  ${checkoutState.appliedPromo ? 
+                    `<button class="btn btn-outline-accent btn-sm" id="remove-promo-btn" style="padding:8px 12px; font-size:0.8rem;">Remove</button>` : 
+                    `<button class="btn btn-primary btn-sm" id="apply-promo-btn" style="padding:8px 16px; font-size:0.8rem;">Apply</button>`
+                  }
+                </div>
+                <p id="promo-status-msg" style="font-size:0.75rem; margin-top:6px; margin-bottom:0; display:none;"></p>
+              </div>
+
+              <button class="btn btn-secondary btn-sm" data-back-step="2" style="margin:0 0 12px;">← Back</button>
               <button class="btn btn-primary btn-full" id="confirm-order">Confirm Order</button>
               <p style="font-size:0.78rem;color:#999;margin-top:16px;text-align:center;" data-auth="guest">
                 <a href="login.html?redirect=cart.html" style="color:var(--color-accent);">Login</a> or
