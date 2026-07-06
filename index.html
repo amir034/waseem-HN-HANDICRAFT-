@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=21">
+  <link rel="stylesheet" href="css/style.css?v=30">
   <style>
     html, body { width: 100%; max-width: 100%; overflow-x: hidden; overflow-x: clip; margin: 0; padding: 0; }
     .announcement-ticker-wrap, .hero-slider, .section, .site-footer { width: 100%; max-width: 100%; overflow-x: hidden; }
@@ -326,10 +326,10 @@
     <a href="shop.html?category=wooden">Wooden</a>
     <a href="#services">Bulk Gifting</a>
     <a href="profile.html" data-auth="user" style="display:none">My Profile</a>
+    <a href="cart.html">Cart</a>
     <a href="login.html" data-auth="guest">Login</a>
     <a href="signup.html" data-auth="guest">Sign Up</a>
     <a href="#" onclick="logout(); return false;" data-auth="user" style="display:none">Logout</a>
-    <a href="cart.html">Cart</a>
   </nav>
 
   <!-- Notify Me Modal -->
@@ -352,74 +352,9 @@
   <script src="js/content.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/cart.js"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="js/app.js?v=30"></script>
   <script src="js/site-boot.js"></script>
 
-  <!-- Offers FAB Button -->
-  <button type="button" id="offers-fab-btn" onclick="window._openOffersPopup()" title="View Offers" aria-label="View Offers" style="position:fixed;bottom:100px;right:24px;z-index:1999;width:54px;height:54px;border-radius:50%;border:2px solid #e8d6b8;background:linear-gradient(135deg,#c29958,#a8834a);color:#fff;font-size:1.5rem;cursor:pointer;box-shadow:0 4px 20px rgba(194,153,88,0.45);display:flex;align-items:center;justify-content:center;transition:transform 0.3s,box-shadow 0.3s;animation:offersPulse 2.5s ease-in-out infinite;">&#x1F3F7;&#xFE0F;</button>
-  <style>
-    @keyframes offersPulse { 0%,100%{box-shadow:0 4px 20px rgba(194,153,88,0.45)} 50%{box-shadow:0 4px 28px rgba(194,153,88,0.7)} }
-    #offers-fab-btn:hover { transform:scale(1.12); box-shadow:0 6px 24px rgba(194,153,88,0.6); }
-    @media(max-width:768px){ #offers-fab-btn{bottom:90px;right:16px;width:48px;height:48px;font-size:1.3rem;} }
-  </style>
-
-  <!-- Offers Popup Modal -->
-  <div id="offers-popup-modal" style="position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;">
-    <div onclick="document.getElementById('offers-popup-modal').style.display='none'" style="position:absolute;inset:0;background:rgba(0,0,0,0.45);backdrop-filter:blur(10px);"></div>
-    <div style="position:relative;width:90%;max-width:560px;max-height:80vh;background:#fdfcf7;border-radius:16px;box-shadow:0 20px 40px rgba(0,0,0,0.18);border:1px solid #e8e3d5;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="padding:18px 24px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;background:#f7f4eb;">
-        <h2 style="margin:0;font-family:'Cormorant Garamond',serif;font-size:1.35rem;color:#5c4033;">&#x1F3F7;&#xFE0F; Running Offers &amp; Promos</h2>
-        <button type="button" onclick="document.getElementById('offers-popup-modal').style.display='none'" style="background:none;border:none;font-size:1.8rem;cursor:pointer;color:#888;line-height:1;">&times;</button>
-      </div>
-      <div id="offers-popup-body" style="padding:20px 24px;overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:14px;"></div>
-    </div>
-  </div>
-
-  <script>
-  window._openOffersPopup = function() {
-    var modal = document.getElementById('offers-popup-modal');
-    var body = document.getElementById('offers-popup-body');
-    var promos = [];
-    var products = [];
-    try { promos = getPromos(); } catch(e) { promos = JSON.parse(localStorage.getItem('hc_promos') || '[]'); }
-    try { products = getProducts(); } catch(e) { products = JSON.parse(localStorage.getItem('hc_products') || '[]'); }
-
-    if (!promos || promos.length === 0) {
-      body.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#888;font-size:0.95rem;">No offers are running right now.<br>Check back soon!</div>';
-    } else {
-      var html = '';
-      for (var i = 0; i < promos.length; i++) {
-        var p = promos[i];
-        var applicable = [];
-        for (var j = 0; j < products.length; j++) {
-          if (products[j].promoEnabled && products[j].promoCode === p.code) applicable.push(products[j]);
-        }
-        var isAll = applicable.length === 0;
-        var autoText = p.autoApplyMin ? '<div style="font-size:0.72rem;color:#27ae60;margin-top:3px;">Auto-applies on orders above &#8377;' + p.autoApplyMin.toLocaleString('en-IN') + '</div>' : '';
-        var prodList = '';
-        if (!isAll) {
-          prodList = '<button type="button" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display===\'grid\'?\'none\':\'grid\'" style="font-size:0.8rem;color:#9c7329;background:none;border:none;cursor:pointer;padding:0;font-weight:500;">Show Products (' + applicable.length + ') &#x25BE;</button>';
-          prodList += '<div style="display:none;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">';
-          for (var k = 0; k < applicable.length; k++) {
-            var ap = applicable[k];
-            prodList += '<a href="product.html?id=' + ap.id + '" style="display:flex;align-items:center;gap:8px;background:#fdfcf9;border:1px solid #eee;padding:6px;border-radius:6px;text-decoration:none;color:#333;font-size:0.72rem;font-weight:500;"><img src="' + ap.image + '" style="width:32px;height:32px;object-fit:cover;border-radius:4px;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + ap.name + '</span></a>';
-          }
-          prodList += '</div>';
-        }
-        html += '<div style="background:#fff;border:1px solid #ebdcb9;border-radius:12px;padding:16px;box-shadow:0 4px 10px rgba(0,0,0,0.02);">';
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;gap:14px;">';
-        html += '<div style="background:#f7f0df;color:#9c7329;font-family:Cormorant Garamond,serif;font-size:1.3rem;font-weight:bold;padding:8px 14px;border-radius:8px;border:1px dashed #ebdcb9;">' + p.discount + '% OFF</div>';
-        html += '<div style="flex:1;text-align:left;"><div style="font-size:1.05rem;font-weight:600;color:#333;letter-spacing:0.5px;">' + p.code + '</div><div style="font-size:0.75rem;color:#666;margin-top:2px;">' + (isAll ? 'All Products' : 'Selected Products') + '</div>' + autoText + '</div>';
-        html += '<button type="button" onclick="navigator.clipboard.writeText(\'' + p.code + '\');this.textContent=\'Copied!\';this.style.background=\'#4caf50\';var b=this;setTimeout(function(){b.textContent=\'Copy\';b.style.background=\'#b89047\'},2000)" style="background:#b89047;color:#fff;border:none;padding:8px 14px;border-radius:6px;font-size:0.82rem;font-weight:500;cursor:pointer;">Copy</button>';
-        html += '</div>';
-        if (prodList) html += '<div style="margin-top:10px;">' + prodList + '</div>';
-        html += '</div>';
-      }
-      body.innerHTML = html;
-    }
-    modal.style.display = 'flex';
-  };
-  </script>
 </body>
 </html>
 

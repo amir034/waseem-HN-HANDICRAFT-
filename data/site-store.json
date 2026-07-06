@@ -35,8 +35,8 @@
           "createdAt": "2026-06-25T19:49:46.496Z"
         }
       ],
-      "loginCount": 11,
-      "lastLogin": "2026-07-05T11:23:31.382717Z",
+      "loginCount": 13,
+      "lastLogin": "2026-07-06T12:31:14.777365Z",
       "createdAt": "2026-06-25T11:29:48.479878Z",
       "stockAlerts": [
         {
@@ -66,6 +66,16 @@
       "loginCount": 2,
       "lastLogin": "2026-07-03T08:39:09.952Z",
       "createdAt": "2026-07-03T08:39:09.948166Z"
+    },
+    {
+      "id": "user_1783339729503",
+      "name": "Test Customer",
+      "email": "testpay@gmail.com",
+      "password": "password123",
+      "addresses": [],
+      "loginCount": 2,
+      "lastLogin": "2026-07-06T12:08:49.595Z",
+      "createdAt": "2026-07-06T12:08:49.567299Z"
     }
   ],
   "pending_otps": {

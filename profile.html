@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=11">
+  <link rel="stylesheet" href="css/style.css?v=30">
 </head>
 <body>
 
@@ -177,9 +177,9 @@
     <a href="index.html">Home</a>
     <a href="shop.html">Shop</a>
     <a href="profile.html" data-auth="user" style="display:none">My Profile</a>
+    <a href="cart.html">Cart</a>
     <a href="login.html" data-auth="guest">Login</a>
     <a href="#" onclick="logout(); return false;" data-auth="user" style="display:none">Logout</a>
-    <a href="cart.html">Cart</a>
   </nav>
 
   <script src="js/site-sync.js"></script>
@@ -190,7 +190,7 @@
   <script src="js/auth.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/checkout.js"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="js/app.js?v=30"></script>
   <script src="js/site-boot.js"></script>
   <script>
     let addrPincodeData = null;
@@ -389,7 +389,8 @@
               <span class="order-status status-${status}">${getOrderStatusLabel(status)}</span>
             </div>
             <div class="order-product-list">${itemsHtml}</div>
-            <p class="order-total">Total: ${formatPrice(order.total)}</p>
+            <p class="order-total">Total: ${formatPrice(order.total)} · <span style="font-weight:normal;color:#666;">Payment: ${order.paymentMethod || 'COD'}</span></p>
+            ${order.paymentId ? `<p style="font-size:0.75rem;color:#888;margin-top:2px;">Payment ID: <code>${order.paymentId}</code></p>` : ''}
             <p style="font-size:0.82rem;color:#999;margin-top:8px;">Ship to: ${address}</p>
             <div class="order-tracking">${steps.map(s => `
               <div class="tracking-step ${s.completed ? 'completed' : ''}">

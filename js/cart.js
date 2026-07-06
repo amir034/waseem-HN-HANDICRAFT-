@@ -45,11 +45,7 @@ function migrateLegacyCart(email) {
 
 function addToCart(productId, quantity = 1, forceSet = false) {
   if (typeof isCustomerLoggedIn === 'function' && !isCustomerLoggedIn()) {
-    if (typeof showAccountRequiredModal === 'function') {
-      showAccountRequiredModal();
-    } else {
-      showToast('Please create an account first to add items to cart.');
-    }
+    window.location.href = 'login.html';
     return false;
   }
 
@@ -145,7 +141,7 @@ function saveOrders(orders) {
   }
 }
 
-function createOrder(userEmail, addressDetails) {
+function createOrder(userEmail, addressDetails, paymentMethod = 'COD', paymentId = '') {
   const cart = getCart();
   if (cart.length === 0) return null;
 
@@ -182,6 +178,8 @@ function createOrder(userEmail, addressDetails) {
     total: Math.max(0, subtotal - promoDiscount) + shipping,
     addressDetails,
     shippingAddress: addressDetails.formatted,
+    paymentMethod,
+    paymentId,
     status: 'confirmed',
     createdAt: new Date().toISOString(),
     tracking: {

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=11">
+  <link rel="stylesheet" href="css/style.css?v=30">
 </head>
 <body>
 
@@ -50,9 +50,9 @@
     <button class="mobile-nav-close" aria-label="Close" data-icon="close"></button>
     <a href="index.html">Home</a>
     <a href="shop.html">Shop</a>
+    <a href="profile.html" data-auth="user" style="display:none">My Profile</a>
     <a href="cart.html">Cart</a>
     <a href="login.html" data-auth="guest">Login</a>
-    <a href="profile.html" data-auth="user" style="display:none">My Profile</a>
   </nav>
 
   <script src="js/site-sync.js"></script>
@@ -63,7 +63,8 @@
   <script src="js/auth.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/checkout.js"></script>
-  <script src="js/app.js?v=5"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="js/app.js?v=30"></script>
   <script src="js/site-boot.js"></script>
   <script>
     function renderCartItems() {
@@ -222,19 +223,59 @@
             formatted: formatFullAddress(checkoutState)
           };
 
-          const order = createOrder(user.email, addressDetails);
-          if (order) {
+          const selectedMethod = document.querySelector('input[name="payment-method"]:checked')?.value || 'COD';
+          const subtotal = getCartTotal();
+          const discount = checkoutState.promoDiscount || 0;
+          const shipping = getShippingCost(Math.max(0, subtotal - discount));
+          const finalTotal = Math.max(0, subtotal - discount) + shipping;
+
+          const showSuccess = (order) => {
             document.getElementById('cart-content').innerHTML = `
               <div class="order-success">
                 ${getIcon('checkCircle')}
                 <h2>Order Confirmed!</h2>
                 <p>Thank you for your purchase. Your handcrafted treasures are on their way.</p>
                 <p class="order-id-display">${order.id}</p>
+                <div style="background:#f7f5ef; border:1px solid #ebdcb9; padding:12px; border-radius:8px; margin-bottom:20px; font-size:0.88rem; color:#5c4033; text-align:center; max-width:320px; margin-left:auto; margin-right:auto;">
+                  Payment Method: <strong>${order.paymentMethod === 'Online' ? '💳 Online Payment' : '💵 Cash on Delivery (COD)'}</strong>
+                  ${order.paymentId ? `<br>Payment ID: <code>${order.paymentId}</code>` : ''}
+                </div>
                 <a href="profile.html#orders" class="btn btn-primary">View My Profile</a>
                 <a href="shop.html" class="btn btn-secondary" style="margin-left:12px;margin-top:12px;">Continue Shopping</a>
               </div>
             `;
             window.scrollTo({ top: 0, behavior: 'smooth' });
+          };
+
+          if (selectedMethod === 'Online') {
+            const options = {
+              key: 'rzp_live_TADRzjE9r6DQoo',
+              amount: finalTotal * 100, // amount in paisa
+              currency: 'INR',
+              name: 'HN Handicraft',
+              description: 'Payment for Handcrafted Treasures',
+              handler: function (response) {
+                const order = createOrder(user.email, addressDetails, 'Online', response.razorpay_payment_id);
+                if (order) {
+                  showSuccess(order);
+                }
+              },
+              prefill: {
+                name: addressDetails.fullName,
+                contact: addressDetails.phone,
+                email: user.email
+              },
+              theme: {
+                color: '#c29958'
+              }
+            };
+            const rzp = new Razorpay(options);
+            rzp.open();
+          } else {
+            const order = createOrder(user.email, addressDetails, 'COD', '');
+            if (order) {
+              showSuccess(order);
+            }
           }
         });
       }
@@ -402,6 +443,21 @@
                   }
                 </div>
                 <p id="promo-status-msg" style="font-size:0.75rem; margin-top:6px; margin-bottom:0; display:none;"></p>
+              </div>
+
+              <!-- Payment Method Selection -->
+              <div class="payment-method-section" style="margin-top:16px; border-bottom:1px solid #eee; padding-bottom:16px; margin-bottom:16px; text-align:left;">
+                <h4 style="font-family:var(--font-display);margin-bottom:12px;color:#5c4033;font-size:1.1rem;font-weight:500;">Select Payment Method</h4>
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                  <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.9rem; font-weight:600; color:#333;">
+                    <input type="radio" name="payment-method" value="COD" checked style="accent-color:#c29958; cursor:pointer;">
+                    <span>💵 Cash on Delivery (COD)</span>
+                  </label>
+                  <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:0.9rem; font-weight:600; color:#333;">
+                    <input type="radio" name="payment-method" value="Online" style="accent-color:#c29958; cursor:pointer;">
+                    <span>💳 Online Payment (UPI / Cards / NetBanking)</span>
+                  </label>
+                </div>
               </div>
 
               <button class="btn btn-secondary btn-sm" data-back-step="2" style="margin:0 0 12px;">← Back</button>

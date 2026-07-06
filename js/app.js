@@ -541,6 +541,10 @@ function injectOffersButtons() {
 
 function openOffersModal() {
   let modal = document.getElementById('offers-popup-modal');
+  if (modal && modal.classList.contains('open')) {
+    modal.classList.remove('open');
+    return;
+  }
   if (!modal) {
     modal = document.createElement('div');
     modal.id = 'offers-popup-modal';
@@ -549,9 +553,9 @@ function openOffersModal() {
     const styleEl = document.createElement('style');
     styleEl.textContent = `
       .offers-modal {
-        position: fixed;
-        inset: 0;
-        z-index: 9999;
+        position: fixed !important;
+        inset: 0 !important;
+        z-index: 20000 !important;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -765,11 +769,10 @@ function openOffersModal() {
     `;
     document.body.appendChild(modal);
 
-    modal.querySelector('.offers-modal-overlay').addEventListener('click', () => {
-      modal.classList.remove('open');
-    });
-    modal.querySelector('.offers-modal-close').addEventListener('click', () => {
-      modal.classList.remove('open');
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal || e.target.classList.contains('offers-modal-overlay') || e.target.closest('.offers-modal-close')) {
+        modal.classList.remove('open');
+      }
     });
   }
 

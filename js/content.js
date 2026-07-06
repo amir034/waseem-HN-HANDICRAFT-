@@ -496,7 +496,11 @@ function showOfferPopupIfNeeded() {
   overlay.onclick = (e) => { if (e.target === overlay) closePopup(); };
   btnEl.onclick = () => closePopup();
 
-  setTimeout(() => { overlay.hidden = false; }, 1200);
+  setTimeout(() => {
+    const regModal = document.getElementById('account-required-modal');
+    if (regModal && !regModal.hidden) return;
+    overlay.hidden = false;
+  }, 1200);
 }
 
 function initSitePromotions() {

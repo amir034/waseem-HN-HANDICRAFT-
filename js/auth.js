@@ -650,4 +650,12 @@ function hideAccountRequiredModal() {
 
 document.addEventListener('DOMContentLoaded', () => {
   startAuthSync();
+
+  // Show "Create an account first" modal if it's the user's first visit and they're not logged in
+  if (!isLoggedIn() && !localStorage.getItem('hc_first_visit_shown')) {
+    setTimeout(() => {
+      showAccountRequiredModal();
+      localStorage.setItem('hc_first_visit_shown', 'true');
+    }, 500);
+  }
 });

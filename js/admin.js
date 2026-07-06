@@ -817,6 +817,7 @@ function renderOrderDetailCard(order, options = {}) {
       <p><strong>Customer:</strong> ${order.userEmail}</p>
       <p><strong>Phone:</strong> ${addr.phone || '—'}</p>
       <p><strong>Address:</strong> ${order.shippingAddress || '—'}</p>
+      <p><strong>Payment Method:</strong> ${order.paymentMethod || 'COD'}${order.paymentId ? ` (ID: <code>${order.paymentId}</code>)` : ''}</p>
       <div class="admin-order-items">${itemsHtml}</div>
       <p class="admin-order-total"><strong>Total:</strong> ${formatPrice(order.total)}</p>
       ${options.hideActions ? '' : renderOrderActions(order)}

@@ -107,7 +107,7 @@ body::before {
   opacity: 0.65;
 }
 
-body > *:not(.offer-popup-overlay):not(.mobile-nav):not(.whatsapp-fab):not(.admin-modal):not(.admin-sidebar):not(.site-header):not(.announcement-ticker-wrap) {
+body > *:not(.offer-popup-overlay):not(.mobile-nav):not(.whatsapp-fab):not(.admin-modal):not(.admin-sidebar):not(.site-header):not(.announcement-ticker-wrap):not(.account-modal-overlay):not(.offers-modal) {
   position: relative;
   z-index: 1;
 }
@@ -4146,6 +4146,7 @@ body > .mobile-nav:not(.open) {
   }
 
   .admin-logout-btn {
+    position: static;
     grid-column: 2;
     grid-row: 1;
     align-self: center;
@@ -4153,6 +4154,7 @@ body > .mobile-nav:not(.open) {
     margin-top: 0;
     padding: 8px 14px;
     font-size: 0.78rem;
+    width: auto;
   }
 
   .admin-nav {
