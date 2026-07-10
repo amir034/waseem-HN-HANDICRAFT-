@@ -1,28 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>HN Handicraft — Authentic Indian Handicraft</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="css/style.css?v=30">
   <style>
-    html, body { width: 100%; max-width: 100%; overflow-x: hidden; overflow-x: clip; margin: 0; padding: 0; }
-    .announcement-ticker-wrap, .hero-slider, .section, .site-footer { width: 100%; max-width: 100%; overflow-x: hidden; }
-    .site-header { width: 100%; max-width: 100%; overflow-x: clip; overflow-y: visible; }
-    .mobile-nav { display: none !important; position: fixed !important; inset: 0; z-index: 2000; pointer-events: none; }
-    .mobile-nav.open { display: flex !important; pointer-events: auto; }
-    @media (max-width: 1024px) {
-      .nav-hide-mobile { display: none !important; }
-      .header-inner { display: flex !important; justify-content: space-between !important; align-items: center !important; grid-template-columns: unset !important; max-width: 100% !important; }
-      .nav-left { display: none !important; }
-      .logo-area { justify-content: flex-start !important; min-width: 0 !important; }
-      .mobile-menu-btn { display: flex !important; }
+    html,
+    body {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+      overflow-x: clip;
+      margin: 0;
+      padding: 0;
+    }
+
+    .announcement-ticker-wrap,
+    .hero-slider,
+    .section,
+    .site-footer {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
+    .site-header {
+      width: 100%;
+      max-width: 100%;
+      overflow-x: clip;
+      overflow-y: visible;
+    }
+
+    .mobile-nav {
+      display: none !important;
+      position: fixed !important;
+      inset: 0;
+      z-index: 2000;
+      pointer-events: none;
+    }
+
+    .mobile-nav.open {
+      display: flex !important;
+      pointer-events: auto;
+    }
+
+    @media (max-width: 1200px) {
+      .nav-hide-mobile {
+        display: none !important;
+      }
+
+      .header-inner {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        grid-template-columns: unset !important;
+        max-width: 100% !important;
+      }
+
+      .nav-left {
+        display: none !important;
+      }
+
+      .logo-area {
+        justify-content: flex-start !important;
+        min-width: 0 !important;
+      }
+
+      .mobile-menu-btn {
+        display: flex !important;
+      }
     }
   </style>
 </head>
+
 <body>
 
   <!-- Header -->
@@ -50,16 +107,19 @@
         <a href="#services">Bulk Gifting</a>
       </nav>
 
-        <a href="index.html" class="logo-area">
+      <a href="index.html" class="logo-area">
         <div class="site-logo">HN <span>Handicraft</span></div>
       </a>
 
       <div class="nav-right">
         <a href="shop.html" class="nav-icon nav-hide-mobile" aria-label="Search" data-icon="search"></a>
         <a href="login.html" class="nav-icon" aria-label="Account" data-auth="guest" data-icon="user"></a>
-        <a href="profile.html" class="nav-icon" aria-label="My Profile" data-auth="user" style="display:none" data-icon="user"></a>
-        <button type="button" class="nav-icon nav-icon-logout" aria-label="Logout" data-auth="user" style="display:none" data-icon="logout" onclick="logout()"></button>
-        <a href="admin.html" class="nav-icon nav-icon-admin" aria-label="Admin Panel" data-auth="admin" style="display:none" data-icon="admin"></a>
+        <a href="profile.html" class="nav-icon" aria-label="My Profile" data-auth="user" style="display:none"
+          data-icon="user"></a>
+        <button type="button" class="nav-icon nav-icon-logout" aria-label="Logout" data-auth="logged-in" style="display:none"
+          data-icon="logout" onclick="logout()"></button>
+        <a href="admin.html" class="nav-icon nav-icon-admin" aria-label="Admin Panel" data-auth="admin"
+          style="display:none" data-icon="admin"></a>
         <a href="cart.html" class="nav-icon" aria-label="Cart" data-icon="cart">
           <span class="cart-count" style="display:none">0</span>
         </a>
@@ -92,14 +152,22 @@
     <div class="container">
       <div class="about-split reveal">
         <div class="about-image">
-          <img src="assets/images/handicraft/about-artisan.jpg" alt="HN Handicraft artisan weaving on a traditional loom">
+          <img src="assets/images/handicraft/about-artisan.jpg"
+            alt="HN Handicraft artisan weaving on a traditional loom">
         </div>
         <div class="about-content">
           <span class="section-label">About Us</span>
           <h2>Our Story</h2>
-          <p>HN Handicraft began with a simple belief: that the hands behind India's finest traditions deserve a stage as beautiful as the work they create. What started as a small curators' table at local craft fairs has grown into a platform connecting skilled makers from Kutch, Varanasi, Jaipur, Kashmir, and beyond with homes across the world.</p>
-          <p>Every product in our collection is chosen for its authenticity, quality, and the story it carries — from handwoven Kala cotton throws to meenakari enamel, Banarasi silk, and rosewood inlay. We work directly with artisan families and cooperatives, ensuring fair wages and long-term partnerships that keep endangered crafts alive.</p>
-          <p>When you shop with us, you are not just buying a product. You are preserving a legacy, supporting a livelihood, and bringing a piece of India's living heritage into your everyday life.</p>
+          <p>HN Handicraft began with a simple belief: that the hands behind India's finest traditions deserve a stage
+            as beautiful as the work they create. What started as a small curators' table at local craft fairs has grown
+            into a platform connecting skilled makers from Kutch, Varanasi, Jaipur, Kashmir, and beyond with homes
+            across the world.</p>
+          <p>Every product in our collection is chosen for its authenticity, quality, and the story it carries — from
+            handwoven Kala cotton throws to meenakari enamel, Banarasi silk, and rosewood inlay. We work directly with
+            artisan families and cooperatives, ensuring fair wages and long-term partnerships that keep endangered
+            crafts alive.</p>
+          <p>When you shop with us, you are not just buying a product. You are preserving a legacy, supporting a
+            livelihood, and bringing a piece of India's living heritage into your everyday life.</p>
           <a href="shop.html" class="btn btn-outline-accent" style="margin-top:8px;">Explore Our Collection</a>
         </div>
       </div>
@@ -111,7 +179,8 @@
     <div class="container">
       <div class="section-header reveal">
         <h2>Shop Now</h2>
-        <p>Welcome to HN Handicraft, where tradition meets innovation. We proudly present a curated selection of our finest handcrafted creations, meticulously crafted by skilled artisans from across India.</p>
+        <p>Welcome to HN Handicraft, where tradition meets innovation. We proudly present a curated selection of our
+          finest handcrafted creations, meticulously crafted by skilled artisans from across India.</p>
       </div>
     </div>
   </section>
@@ -144,7 +213,8 @@
       <div class="section-header reveal">
         <span class="section-label">What We Offer</span>
         <h2>Projects and Services</h2>
-        <p>Crafting stories, shaping futures. We collaborate with partner artisans to design and co-create a range of projects and services — from folk art-inspired design to custom bulk gifting.</p>
+        <p>Crafting stories, shaping futures. We collaborate with partner artisans to design and co-create a range of
+          projects and services — from folk art-inspired design to custom bulk gifting.</p>
       </div>
       <div class="services-grid reveal">
         <div class="service-card">
@@ -190,38 +260,45 @@
       <div class="section-header reveal">
         <span class="section-label">What We Believe</span>
         <h2>Our Philosophy</h2>
-        <p>At HN Handicraft, craft is not a commodity — it is culture, identity, and care made visible. These principles guide every decision we make, from the artisan we partner with to the product that reaches your doorstep.</p>
+        <p>At HN Handicraft, craft is not a commodity — it is culture, identity, and care made visible. These principles
+          guide every decision we make, from the artisan we partner with to the product that reaches your doorstep.</p>
       </div>
       <div class="philosophy-grid reveal">
         <div class="philosophy-card">
           <span class="philosophy-num">01</span>
           <h3>Authenticity First</h3>
-          <p>We celebrate original techniques passed down through generations — block printing, zardozi embroidery, filigree, kantha stitch, and wood inlay — never mass-produced imitations.</p>
+          <p>We celebrate original techniques passed down through generations — block printing, zardozi embroidery,
+            filigree, kantha stitch, and wood inlay — never mass-produced imitations.</p>
         </div>
         <div class="philosophy-card">
           <span class="philosophy-num">02</span>
           <h3>Fair &amp; Transparent</h3>
-          <p>Artisans receive fair compensation for their skill and time. We believe in honest pricing, direct relationships, and complete transparency about where and how each piece is made.</p>
+          <p>Artisans receive fair compensation for their skill and time. We believe in honest pricing, direct
+            relationships, and complete transparency about where and how each piece is made.</p>
         </div>
         <div class="philosophy-card">
           <span class="philosophy-num">03</span>
           <h3>Sustainable by Design</h3>
-          <p>Natural fibres, organic dyes, locally sourced materials, and low-waste production are at the heart of traditional Indian craft. We choose partners who share this respect for the earth.</p>
+          <p>Natural fibres, organic dyes, locally sourced materials, and low-waste production are at the heart of
+            traditional Indian craft. We choose partners who share this respect for the earth.</p>
         </div>
         <div class="philosophy-card">
           <span class="philosophy-num">04</span>
           <h3>Craft Meets Contemporary</h3>
-          <p>Heritage need not feel outdated. We collaborate with artisans to reimagine classic forms for modern homes — functional, beautiful, and rooted in tradition.</p>
+          <p>Heritage need not feel outdated. We collaborate with artisans to reimagine classic forms for modern homes —
+            functional, beautiful, and rooted in tradition.</p>
         </div>
         <div class="philosophy-card">
           <span class="philosophy-num">05</span>
           <h3>Every Piece Has a Story</h3>
-          <p>No two handcrafted items are exactly alike. Variations in weave, patina, and finish are marks of the human hand — and we celebrate them, not hide them.</p>
+          <p>No two handcrafted items are exactly alike. Variations in weave, patina, and finish are marks of the human
+            hand — and we celebrate them, not hide them.</p>
         </div>
         <div class="philosophy-card">
           <span class="philosophy-num">06</span>
           <h3>Community Over Commerce</h3>
-          <p>Our success is measured not only in sales, but in the number of artisan families we sustain and the crafts we help keep alive for the next generation.</p>
+          <p>Our success is measured not only in sales, but in the number of artisan families we sustain and the crafts
+            we help keep alive for the next generation.</p>
         </div>
       </div>
     </div>
@@ -257,10 +334,14 @@
       <div class="section-header reveal">
         <span class="section-label" id="artisans-label">The Makers</span>
         <h2 id="artisans-title">Our Artisans</h2>
-        <p id="artisans-intro">Behind every HN Handicraft product is a master artisan — a weaver, engraver, painter, or carver whose skill has been honed over decades. Meet some of the talented hands that bring our collection to life.</p>
+        <p id="artisans-intro">Behind every HN Handicraft product is a master artisan — a weaver, engraver, painter, or
+          carver whose skill has been honed over decades. Meet some of the talented hands that bring our collection to
+          life.</p>
       </div>
       <div class="artisans-grid reveal" id="artisans-grid"></div>
-      <p class="artisans-note reveal" id="artisans-note">We partner with 50+ artisan families across 12 states. Each purchase directly supports their craft, their community, and the preservation of India's intangible cultural heritage.</p>
+      <p class="artisans-note reveal" id="artisans-note">We partner with 50+ artisan families across 12 states. Each
+        purchase directly supports their craft, their community, and the preservation of India's intangible cultural
+        heritage.</p>
     </div>
   </section>
 
@@ -273,19 +354,23 @@
       </div>
       <div class="testimonials-slider reveal">
         <div class="testimonial-slide active">
-          <p>"Amazing concept of tweaking original handicraft products to fuse with urban taste. The mesmerising gift collection crafted by Indian artisans is scintillating. I will buy more soon!"</p>
+          <p>"Amazing concept of tweaking original handicraft products to fuse with urban taste. The mesmerising gift
+            collection crafted by Indian artisans is scintillating. I will buy more soon!"</p>
           <span class="author">Rajesh Jain, India</span>
         </div>
         <div class="testimonial-slide">
-          <p>"We made our wedding invites with HN Handicraft and it was loved by all! We've received so many compliments. Thank you for putting so much effort in every detail!"</p>
+          <p>"We made our wedding invites with HN Handicraft and it was loved by all! We've received so many
+            compliments. Thank you for putting so much effort in every detail!"</p>
           <span class="author">Gaurangi & Ameya, USA</span>
         </div>
         <div class="testimonial-slide">
-          <p>"It was a great experience working with HN Handicraft. Really good quality designs, timely response and proactive collaborator. Loved the experience!"</p>
+          <p>"It was a great experience working with HN Handicraft. Really good quality designs, timely response and
+            proactive collaborator. Loved the experience!"</p>
           <span class="author">Ojjasvi Puri, Singapore</span>
         </div>
         <div class="testimonial-slide">
-          <p>"The hand-painted lamp is lovely. It was made earlier than expected with my colour customisations and it looks gorgeous. A seamless communicative experience."</p>
+          <p>"The hand-painted lamp is lovely. It was made earlier than expected with my colour customisations and it
+            looks gorgeous. A seamless communicative experience."</p>
           <span class="author">Sabitha Abdul Salim, India</span>
         </div>
         <div class="testimonial-nav">
@@ -312,7 +397,8 @@
 
   <footer class="site-footer" data-site-footer></footer>
 
-  <a href="https://wa.me/918273038804" class="whatsapp-fab" data-whatsapp-link target="_blank" rel="noopener" aria-label="WhatsApp" data-icon="whatsapp"></a>
+  <a href="https://wa.me/918273038804" class="whatsapp-fab" data-whatsapp-link target="_blank" rel="noopener"
+    aria-label="WhatsApp" data-icon="whatsapp"></a>
 
   <nav class="mobile-nav" aria-hidden="true">
     <button class="mobile-nav-close" aria-label="Close" data-icon="close"></button>
@@ -326,10 +412,11 @@
     <a href="shop.html?category=wooden">Wooden</a>
     <a href="#services">Bulk Gifting</a>
     <a href="profile.html" data-auth="user" style="display:none">My Profile</a>
+    <a href="admin.html" data-auth="admin" style="display:none">Admin Panel</a>
     <a href="cart.html">Cart</a>
     <a href="login.html" data-auth="guest">Login</a>
     <a href="signup.html" data-auth="guest">Sign Up</a>
-    <a href="#" onclick="logout(); return false;" data-auth="user" style="display:none">Logout</a>
+    <a href="#" onclick="logout(); return false;" data-auth="logged-in" style="display:none">Logout</a>
   </nav>
 
   <!-- Notify Me Modal -->
@@ -350,11 +437,11 @@
   <script src="js/products.js"></script>
   <script src="js/icons.js?v=3"></script>
   <script src="js/content.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/cart.js"></script>
+  <script src="js/auth.js?v=31"></script>
+  <script src="js/cart.js?v=31"></script>
   <script src="js/app.js?v=30"></script>
   <script src="js/site-boot.js"></script>
 
 </body>
-</html>
 
+</html>

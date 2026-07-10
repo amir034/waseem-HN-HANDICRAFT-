@@ -4,7 +4,7 @@ const ORDER_COUNTER_KEY = 'hc_order_counter';
 
 function getCartStorageKey() {
   if (typeof isCustomerLoggedIn === 'function' && !isCustomerLoggedIn()) return null;
-  const email = localStorage.getItem('hc_session');
+  const email = localStorage.getItem('hc_session') || (typeof isAdmin === 'function' && isAdmin() ? 'admin@gmail.com' : null);
   if (!email) return null;
   return 'hc_cart_' + email.trim().toLowerCase();
 }

@@ -201,10 +201,11 @@ class SiteHandler(SimpleHTTPRequestHandler):
             self.send_json({'success': False, 'message': 'Invalid users payload.'}, 400)
             return
         store = load_store()
+        allowed_emails = {normalize_email(u.get('email')) for u in users if u.get('email')}
         merged = {}
         for user in store.get('users', []):
             email = normalize_email(user.get('email'))
-            if email and email != ADMIN_EMAIL:
+            if email and email != ADMIN_EMAIL and email in allowed_emails:
                 merged[email] = user
         for user in users:
             email = normalize_email(user.get('email'))

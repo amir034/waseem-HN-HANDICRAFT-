@@ -11,7 +11,8 @@ const SITE_CONTENT_KEYS = [
   'hc_order_counter',
   'hc_returns',
   'hc_promos',
-  'hc_welcome_section'
+  'hc_welcome_section',
+  'hc_testimonials'
 ];
 
 let pushTimer = null;

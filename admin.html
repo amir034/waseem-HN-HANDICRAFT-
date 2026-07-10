@@ -25,9 +25,11 @@
       <button class="admin-tab" data-tab="shipment">Shipment</button>
       <button class="admin-tab" data-tab="delivered">Delivered</button>
       <button class="admin-tab" data-tab="users">Users</button>
+      <button class="admin-tab" data-tab="returns">Returns</button>
       <button class="admin-tab" data-tab="hero">Hero Banner</button>
       <button class="admin-tab" data-tab="artisans">Artisans</button>
       <button class="admin-tab" data-tab="announcements">Announcements</button>
+      <button class="admin-tab" data-tab="testimonials">Testimonials</button>
       <button class="admin-tab" data-tab="promo">Promo Codes</button>
     </nav>
     <button class="admin-logout-btn" id="admin-logout">Logout</button>
@@ -107,6 +109,14 @@
       <div id="user-detail-panel" class="user-detail-panel"></div>
     </div>
 
+    <div class="admin-panel" id="panel-returns">
+      <div class="admin-panel-heading">
+        <h2>Return Requests</h2>
+        <p>Manage product return requests submitted by customers</p>
+      </div>
+      <div id="admin-returns"></div>
+    </div>
+
     <div class="admin-panel" id="panel-hero">
       <div class="admin-panel-heading">
         <h2>Homepage Hero Banner</h2>
@@ -129,6 +139,14 @@
         <p>Manage the scrolling bar below the header and the offer popup shown to visitors.</p>
       </div>
       <div id="admin-announcements-content"></div>
+    </div>
+
+    <div class="admin-panel" id="panel-testimonials">
+      <div class="admin-panel-heading">
+        <h2>Testimonials</h2>
+        <p>Manage customer reviews and kind words displayed on the homepage</p>
+      </div>
+      <div id="admin-testimonials-content"></div>
     </div>
 
     <div class="admin-panel" id="panel-promo">
@@ -322,13 +340,34 @@
     </div>
   </div>
 
+  <!-- User Orders Modal -->
+  <div class="admin-modal" id="user-orders-modal">
+    <div class="admin-modal-content admin-modal-lg" style="max-height: 85vh; overflow-y: auto;">
+      <button class="admin-modal-close" id="user-orders-modal-close" data-close-modal>&times;</button>
+      <div id="user-orders-modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Lightbox Modal for Return Photos -->
+  <div id="photo-lightbox" class="lightbox-modal">
+    <span class="lightbox-close" id="lightbox-close-btn" onclick="closeLightbox()">&times;</span>
+    <div class="lightbox-content-container">
+      <button class="lightbox-prev" id="lightbox-prev-btn">&#10094;</button>
+      <div class="lightbox-slide">
+        <img id="lightbox-img" src="" alt="Return Photo Large View">
+      </div>
+      <button class="lightbox-next" id="lightbox-next-btn">&#10095;</button>
+    </div>
+    <div class="lightbox-caption" id="lightbox-caption"></div>
+  </div>
+
   <script src="js/site-sync.js"></script>
   <script src="js/products.js"></script>
   <script src="js/image-utils.js"></script>
   <script src="js/content.js"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/cart.js"></script>
-  <script src="js/admin.js?v=2"></script>
+  <script src="js/auth.js?v=31"></script>
+  <script src="js/cart.js?v=31"></script>
+  <script src="js/admin.js?v=31"></script>
   <script src="js/site-boot.js"></script>
 </body>
 </html>

@@ -23,7 +23,8 @@
       <div class="nav-right">
         <a href="login.html" class="nav-icon" aria-label="Account" data-auth="guest" data-icon="user"></a>
         <a href="profile.html" class="nav-icon" aria-label="My Profile" data-auth="user" style="display:none" data-icon="user"></a>
-        <button type="button" class="nav-icon nav-icon-logout" aria-label="Logout" data-auth="user" style="display:none" data-icon="logout" onclick="logout()"></button>
+        <button type="button" class="nav-icon nav-icon-logout" aria-label="Logout" data-auth="logged-in" style="display:none" data-icon="logout" onclick="logout()"></button>
+        <a href="admin.html" class="nav-icon nav-icon-admin" aria-label="Admin Panel" data-auth="admin" style="display:none" data-icon="admin"></a>
         <a href="cart.html" class="nav-icon" aria-label="Cart" data-icon="cart">
           <span class="cart-count" style="display:none">0</span>
         </a>
@@ -135,38 +136,6 @@
     </section>
   </div>
 
-  <div class="site-modal" id="return-modal">
-    <div class="site-modal-content">
-      <button class="site-modal-close" id="return-modal-close">&times;</button>
-      <h2>Return a Product</h2>
-      <p class="subtitle">Select the product from order <strong id="return-order-id"></strong></p>
-      <form id="return-form">
-        <div class="form-group">
-          <label>Select Product *</label>
-          <div id="return-product-list" class="return-product-list"></div>
-        </div>
-        <div class="form-group">
-          <label for="return-reason">Reason for Return *</label>
-          <textarea id="return-reason" rows="3" required></textarea>
-        </div>
-        <div class="form-group">
-          <label>Upload Photos (optional)</label>
-          <input type="file" id="return-images" accept="image/*" multiple>
-          <div id="return-image-preview" class="return-image-preview"></div>
-        </div>
-        <button type="submit" class="btn btn-primary btn-full">Submit Return Request</button>
-      </form>
-    </div>
-  </div>
-
-  <div class="site-modal" id="return-thanks-modal">
-    <div class="site-modal-content site-modal-sm return-thanks-content">
-      <div class="return-thanks-icon" data-icon="checkCircle"></div>
-      <h2>Thank You!</h2>
-      <p>We will look at your issue and inform you. Thank you for your patience.</p>
-      <button type="button" class="btn btn-primary btn-full" id="return-thanks-close">OK</button>
-    </div>
-  </div>
 
   <footer class="site-footer" data-site-footer></footer>
 
@@ -177,9 +146,10 @@
     <a href="index.html">Home</a>
     <a href="shop.html">Shop</a>
     <a href="profile.html" data-auth="user" style="display:none">My Profile</a>
+    <a href="admin.html" data-auth="admin" style="display:none">Admin Panel</a>
     <a href="cart.html">Cart</a>
     <a href="login.html" data-auth="guest">Login</a>
-    <a href="#" onclick="logout(); return false;" data-auth="user" style="display:none">Logout</a>
+    <a href="#" onclick="logout(); return false;" data-auth="logged-in" style="display:none">Logout</a>
   </nav>
 
   <script src="js/site-sync.js"></script>
@@ -187,8 +157,8 @@
   <script src="js/products.js"></script>
   <script src="js/content.js"></script>
   <script src="js/icons.js?v=3"></script>
-  <script src="js/auth.js"></script>
-  <script src="js/cart.js"></script>
+  <script src="js/auth.js?v=31"></script>
+  <script src="js/cart.js?v=31"></script>
   <script src="js/checkout.js"></script>
   <script src="js/app.js?v=30"></script>
   <script src="js/site-boot.js"></script>
@@ -320,23 +290,6 @@
       return steps.map((step, i) => ({ label: step.label, completed: i <= currentIndex }));
     }
 
-    function openReturnModal(order) {
-      returnOrderId = order.id;
-      returnImages = [];
-      document.getElementById('return-order-id').textContent = order.id;
-      document.getElementById('return-reason').value = '';
-      document.getElementById('return-images').value = '';
-      document.getElementById('return-image-preview').innerHTML = '';
-      document.getElementById('return-product-list').innerHTML = order.items.map(item => `
-        <label class="return-product-option">
-          <input type="radio" name="return-product" value="${item.productId}" required>
-          <img src="${item.image}" alt="">
-          <div><strong>${item.name}</strong><p>Qty: ${item.quantity}</p></div>
-        </label>
-      `).join('');
-      document.getElementById('return-modal').classList.add('open');
-    }
-
     function renderOrders() {
       const user = getCurrentUser();
       const orders = getUserOrders(user.email);
@@ -353,31 +306,68 @@
         return;
       }
 
-      container.innerHTML = orders.map(order => {
+      const currentOrders = orders.filter(o => normalizeOrderStatus(o.status) !== 'delivered');
+      const oldOrders = orders.filter(o => normalizeOrderStatus(o.status) === 'delivered');
+
+      const renderOrderCard = (order) => {
         const date = new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
         const status = order.status === 'pending' ? 'confirmed' : order.status;
         const steps = getTrackingSteps(order);
 
-        const itemsHtml = order.items.map(item => `
-          <a href="product.html?id=${item.productId}" class="order-product-link ${item.unavailable ? 'item-unavailable' : ''}">
-            <img src="${item.image}" alt="${item.name}">
-            <div class="info">
-              <h4>${item.name}</h4>
-              <p>${item.productCode || item.productId} · Qty: ${item.quantity}</p>
-              ${item.unavailable ? '<span class="item-unavailable-tag">Not Available</span>' : ''}
-            </div>
-            <span class="price">${formatPrice(item.price * item.quantity)}</span>
-            <span class="arrow" data-icon="chevronRight"></span>
-          </a>
-        `).join('');
+        const itemsHtml = order.items.map(item => {
+          let returnActionHtml = '';
+          if (normalizeOrderStatus(order.status) === 'delivered') {
+            const allReturns = getReturns();
+            const itemReturn = allReturns.find(r => r.orderId === order.id && r.productId === item.productId);
+            
+            if (!itemReturn) {
+              returnActionHtml = `
+                <button type="button" class="btn btn-outline-accent btn-xs return-product-btn" 
+                  data-order-id="${order.id}" 
+                  data-product-id="${item.productId}" 
+                  style="padding: 4px 8px; font-size: 0.72rem; cursor: pointer; border-radius: 4px; border: 1px solid var(--color-accent); color: var(--color-accent); background: none; margin-top: 6px;">
+                  Return Product
+                </button>`;
+            } else if (itemReturn.status === 'pending') {
+              returnActionHtml = `
+                <span style="padding: 3px 6px; font-size: 0.7rem; font-weight: 600; color: #e65100; background: #fff3e0; border-radius: 4px; border: 1px solid #ffe0b2; margin-top: 6px; display: inline-block;">
+                  Return Pending
+                </span>`;
+            } else if (itemReturn.status === 'approved') {
+              returnActionHtml = `
+                <span style="padding: 4px 8px; font-size: 0.72rem; font-weight: 600; color: #2e7d32; background: #e8f5e9; border-radius: 4px; border: 1px solid #c8e6c9; margin-top: 6px; display: inline-block; text-align: right; line-height: 1.2;">
+                  Return Approved:<br>
+                  <span style="font-size: 0.65rem; font-weight: normal; color: #444;">We will initiate your refund</span>
+                </span>`;
+            } else if (itemReturn.status === 'rejected') {
+              returnActionHtml = `
+                <span style="padding: 4px 8px; font-size: 0.72rem; font-weight: 600; color: #c62828; background: #ffebee; border-radius: 4px; border: 1px solid #ffcdd2; margin-top: 6px; display: inline-block; text-align: right; line-height: 1.2;">
+                  Return Rejected:<br>
+                  <span style="font-size: 0.65rem; font-weight: normal; color: #444;">Sorry, we can't accept your return request</span>
+                </span>`;
+            }
+          }
+
+          return `
+            <div class="order-product-link ${item.unavailable ? 'item-unavailable' : ''}" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; text-decoration: none;">
+              <a href="product.html?id=${item.productId}" style="display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit; flex: 1; min-width: 0;">
+                <img src="${item.image}" alt="${item.name}">
+                <div class="info">
+                  <h4>${item.name}</h4>
+                  <p>${item.productCode || item.productId} · Qty: ${item.quantity}</p>
+                  ${item.unavailable ? '<span class="item-unavailable-tag">Not Available</span>' : ''}
+                </div>
+              </a>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; margin-left: 12px; min-width: 120px;">
+                <span class="price">${formatPrice(item.price * item.quantity)}</span>
+                ${returnActionHtml}
+              </div>
+            </div>`;
+        }).join('');
 
         const address = order.addressDetails
           ? `${order.addressDetails.fullName}, ${order.addressDetails.apartment}, ${order.addressDetails.lane}, ${order.addressDetails.city} — ${order.addressDetails.pincode}`
           : order.shippingAddress;
-
-        const returnBtn = status === 'delivered'
-          ? `<button type="button" class="btn btn-outline-accent btn-sm return-order-btn" data-order-id="${order.id}">Return Product</button>`
-          : '';
 
         return `
           <div class="order-card">
@@ -394,17 +384,53 @@
             <p style="font-size:0.82rem;color:#999;margin-top:8px;">Ship to: ${address}</p>
             <div class="order-tracking">${steps.map(s => `
               <div class="tracking-step ${s.completed ? 'completed' : ''}">
-                <div class="tracking-dot">${s.completed ? '✓' : ''}</div>
+                <div class="tracking-dot">${s.completed && s.label !== 'Received' ? '✓' : ''}</div>
                 <span>${s.label}</span>
               </div>`).join('')}</div>
-            <div class="order-card-actions">${returnBtn}</div>
           </div>`;
-      }).join('');
+      };
 
-      container.querySelectorAll('.return-order-btn').forEach(btn => {
+      const currentHtml = currentOrders.length > 0
+        ? currentOrders.map(renderOrderCard).join('')
+        : '<p class="admin-empty" style="text-align:center;padding:20px;color:#888;">No active current orders.</p>';
+
+      const oldHtml = oldOrders.length > 0
+        ? oldOrders.map(renderOrderCard).join('')
+        : '<p class="admin-empty" style="text-align:center;padding:20px;color:#888;">No past orders.</p>';
+
+      container.innerHTML = `
+        <div class="current-orders-list">
+          ${currentHtml}
+        </div>
+        ${oldOrders.length > 0 ? `
+          <div class="old-orders-section" style="margin-top: 30px; text-align: center;">
+            <button type="button" class="btn btn-outline-accent btn-sm" id="toggle-old-orders-btn" style="padding: 10px 24px; font-size: 0.9rem; cursor: pointer;">
+              Recent Orders (${oldOrders.length})
+            </button>
+            <div id="old-orders-container" class="hidden" style="margin-top: 24px; text-align: left;">
+              ${oldHtml}
+            </div>
+          </div>
+        ` : ''}
+      `;
+
+      // Toggle old orders visibility
+      const toggleBtn = document.getElementById('toggle-old-orders-btn');
+      if (toggleBtn) {
+        toggleBtn.addEventListener('click', () => {
+          const oldContainer = document.getElementById('old-orders-container');
+          oldContainer.classList.toggle('hidden');
+          if (oldContainer.classList.contains('hidden')) {
+            toggleBtn.textContent = `Recent Orders (${oldOrders.length})`;
+          } else {
+            toggleBtn.textContent = `Hide Recent Orders`;
+          }
+        });
+      }
+
+      container.querySelectorAll('.return-product-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          const order = orders.find(o => o.id === btn.dataset.orderId);
-          if (order) openReturnModal(order);
+          window.location.href = `return.html?orderId=${btn.dataset.orderId}&productId=${btn.dataset.productId}`;
         });
       });
       initIcons();
@@ -492,44 +518,7 @@
         renderProfile();
       });
 
-      document.getElementById('return-modal-close').addEventListener('click', () => {
-        document.getElementById('return-modal').classList.remove('open');
-      });
-      document.getElementById('return-images').addEventListener('change', (e) => {
-        returnImages = [];
-        const preview = document.getElementById('return-image-preview');
-        preview.innerHTML = '';
-        Array.from(e.target.files || []).forEach(file => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            returnImages.push(reader.result);
-            preview.innerHTML += `<img src="${reader.result}" alt="">`;
-          };
-          reader.readAsDataURL(file);
-        });
-      });
-      document.getElementById('return-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const user = getCurrentUser();
-        const selected = document.querySelector('input[name="return-product"]:checked');
-        if (!selected) { showToast('Please select a product'); return; }
-        const order = getOrderById(returnOrderId);
-        const item = order.items.find(i => i.productId === selected.value);
-        submitReturn({
-          orderId: returnOrderId,
-          userEmail: user.email,
-          productId: selected.value,
-          productName: item.name,
-          reason: document.getElementById('return-reason').value.trim(),
-          images: returnImages
-        });
-        document.getElementById('return-modal').classList.remove('open');
-        document.getElementById('return-thanks-modal').classList.add('open');
-        initIcons();
-      });
-      document.getElementById('return-thanks-close').addEventListener('click', () => {
-        document.getElementById('return-thanks-modal').classList.remove('open');
-      });
+
 
       setInterval(renderProfile, 10000);
     });

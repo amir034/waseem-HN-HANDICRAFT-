@@ -3,6 +3,7 @@ const ARTISAN_SECTION_KEY = 'hc_artisan_section';
 const ANNOUNCEMENTS_KEY = 'hc_announcements';
 const OFFER_POPUP_KEY = 'hc_offer_popup';
 const HERO_SLIDES_KEY = 'hc_hero_slides';
+const TESTIMONIALS_KEY = 'hc_testimonials';
 
 const DEFAULT_HERO_SLIDES = [
   {
@@ -153,6 +154,40 @@ function initContentStore() {
   if (!localStorage.getItem(HERO_SLIDES_KEY)) {
     storeContentItem(HERO_SLIDES_KEY, JSON.stringify(DEFAULT_HERO_SLIDES));
   }
+  if (!localStorage.getItem(TESTIMONIALS_KEY)) {
+    storeContentItem(TESTIMONIALS_KEY, JSON.stringify(DEFAULT_TESTIMONIALS));
+  }
+}
+
+const DEFAULT_TESTIMONIALS = [
+  {
+    id: 'testi_1',
+    text: '"Amazing concept of tweaking original handicraft products to fuse with urban taste. The mesmerising gift collection crafted by Indian artisans is scintillating. I will buy more soon!"',
+    author: 'Rajesh Jain, India'
+  },
+  {
+    id: 'testi_2',
+    text: '"We made our wedding invites with HN Handicraft and it was loved by all! We\'ve received so many compliments. Thank you for putting so much effort in every detail!"',
+    author: 'Gaurangi & Ameya, USA'
+  },
+  {
+    id: 'testi_3',
+    text: '"It was a great experience working with HN Handicraft. Really good quality designs, timely response and proactive collaborator. Loved the experience!"',
+    author: 'Ojjasvi Puri, Singapore'
+  },
+  {
+    id: 'testi_4',
+    text: '"The hand-painted lamp is lovely. It was made earlier than expected with my colour customisations and it looks gorgeous. A seamless communicative experience."',
+    author: 'Sabitha Abdul Salim, India'
+  }
+];
+
+function getTestimonials() {
+  return JSON.parse(localStorage.getItem(TESTIMONIALS_KEY) || '[]');
+}
+
+function saveTestimonials(testimonials) {
+  storeContentItem(TESTIMONIALS_KEY, JSON.stringify(testimonials));
 }
 
 function getHeroSlides() {

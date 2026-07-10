@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <title>Return Product — HN Handicraft</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=30">
+  <style>
+    .return-page-container {
+      max-width: 650px;
+      margin: 40px auto 60px;
+      padding: 0 16px;
+    }
+    .return-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 36px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+      border: 1px solid #e2ded5;
+      transition: all 0.3s ease;
+    }
+    .return-header {
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #e2ded5;
+    }
+    .return-header h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.2rem;
+      margin: 0 0 6px 0;
+      color: #111;
+      font-weight: 500;
+    }
+    .return-header p {
+      font-size: 0.9rem;
+      color: #666;
+      margin: 0;
+    }
+    .product-select-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .product-select-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px;
+      border: 1px solid #e2ded5;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      background: white;
+    }
+    .product-select-item:hover {
+      border-color: #c29d5f;
+      background: #faf9f6;
+    }
+    .product-select-item:has(input[type="radio"]:checked) {
+      border-color: #c29d5f;
+      background: #faf9f6;
+      box-shadow: 0 2px 8px rgba(194, 157, 95, 0.1);
+    }
+    .product-select-item input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #c29d5f;
+      margin: 0;
+      cursor: pointer;
+    }
+    .product-select-item img {
+      width: 56px;
+      height: 56px;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #e2ded5;
+    }
+    .product-select-item .info {
+      flex: 1;
+    }
+    .product-select-item .info h4 {
+      margin: 0 0 4px 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+    .product-select-item .info p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: #666;
+    }
+    .image-upload-area {
+      position: relative;
+      border: 2px dashed #c29d5f;
+      padding: 24px 16px;
+      border-radius: 8px;
+      text-align: center;
+      background: #faf9f6;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 12px;
+    }
+    .image-upload-area:hover {
+      background: #f5f2ea;
+      border-color: #b18c4e;
+    }
+    .image-upload-area input[type="file"] {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      cursor: pointer;
+      z-index: 2;
+    }
+    .image-upload-area .upload-icon-svg {
+      width: 32px;
+      height: 32px;
+      color: #c29d5f;
+      margin: 0 auto 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .image-upload-area .upload-icon-svg svg {
+      width: 100%;
+      height: 100%;
+    }
+    .image-upload-area p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: #333;
+      font-weight: 500;
+    }
+    .image-upload-area span {
+      font-size: 0.75rem;
+      color: #777;
+      display: block;
+      margin-top: 4px;
+    }
+    .image-previews {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .image-preview-thumbnail {
+      position: relative;
+      width: 76px;
+      height: 76px;
+    }
+    .image-preview-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid #e2ded5;
+    }
+    .remove-image-btn {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      background: #ff4d4d;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 10px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 3;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .return-success-view {
+      text-align: center;
+      padding: 20px 0;
+    }
+    .return-success-view svg {
+      width: 64px;
+      height: 64px;
+      color: #2e7d32;
+      margin-bottom: 20px;
+    }
+    .return-success-view h2 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.2rem;
+      margin-bottom: 12px;
+    }
+    .return-success-view p {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 30px;
+      line-height: 1.6;
+    }
+    .btn-full {
+      width: 100%;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 576px) {
+      .return-page-container {
+        margin: 20px auto 40px;
+        padding: 0 12px;
+      }
+      .return-card {
+        padding: 24px 16px;
+        border-radius: 8px;
+      }
+      .return-header h2 {
+        font-size: 1.8rem;
+      }
+      .product-select-item {
+        padding: 12px;
+        gap: 12px;
+      }
+      .product-select-item img {
+        width: 48px;
+        height: 48px;
+      }
+      .product-select-item .info h4 {
+        font-size: 0.88rem;
+      }
+      .product-select-item .info p {
+        font-size: 0.75rem;
+      }
+      .product-select-item span {
+        font-size: 0.85rem;
+      }
+      .image-upload-area {
+        padding: 20px 12px;
+      }
+      .image-upload-area p {
+        font-size: 0.85rem;
+      }
+      .image-previews {
+        gap: 8px;
+      }
+      .image-preview-thumbnail {
+        width: 68px;
+        height: 68px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header"></header>
+
+  <div class="page-hero">
+    <div class="container">
+      <p class="breadcrumb"><a href="index.html">Home</a> / <a href="profile.html#orders">My Profile</a> / Return Product</p>
+      <h1>Return Product</h1>
+    </div>
+  </div>
+
+  <div class="return-page-container">
+    <div class="return-card" id="return-card-content">
+      <!-- Loading or Form Content -->
+      <p style="text-align:center;color:#666;">Loading order details...</p>
+    </div>
+  </div>
+
+  <footer class="site-footer" data-site-footer></footer>
+
+  <script src="js/site-sync.js"></script>
+  <script src="js/config.js?v=3"></script>
+  <script src="js/products.js"></script>
+  <script src="js/content.js"></script>
+  <script src="js/icons.js?v=3"></script>
+  <script src="js/auth.js?v=31"></script>
+  <script src="js/cart.js?v=31"></script>
+  <script src="js/checkout.js"></script>
+  <script src="js/app.js?v=30"></script>
+  <script src="js/site-boot.js"></script>
+  <script>
+    let returnImages = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.__siteStoreReady) await window.__siteStoreReady;
+      if (!requireAuth('login.html?redirect=profile.html')) return;
+      updateAuthUI();
+      updateCartCount();
+
+      // Render standard site header & footer
+      const header = document.querySelector('.site-header');
+      if (header) {
+        header.innerHTML = `
+          <div class="container header-inner">
+            <nav class="nav-left">
+              <a href="shop.html">Shop</a>
+              <a href="index.html">Home</a>
+            </nav>
+            <a href="index.html" class="logo-area">
+              <div class="site-logo">HN <span>Handicraft</span></div>
+            </a>
+            <div class="nav-right">
+              <a href="login.html" class="nav-icon" aria-label="Account" data-auth="guest" data-icon="user"></a>
+              <a href="profile.html" class="nav-icon" aria-label="My Profile" data-auth="user" style="display:none" data-icon="user"></a>
+              <button type="button" class="nav-icon nav-icon-logout" aria-label="Logout" data-auth="logged-in" style="display:none" data-icon="logout" onclick="logout()"></button>
+              <a href="admin.html" class="nav-icon nav-icon-admin" aria-label="Admin Panel" data-auth="admin" style="display:none" data-icon="admin"></a>
+              <a href="cart.html" class="nav-icon" aria-label="Cart" data-icon="cart">
+                <span class="cart-count" style="display:none">0</span>
+              </a>
+              <button class="mobile-menu-btn" aria-label="Menu" data-icon="menu"></button>
+            </div>
+          </div>`;
+      }
+      updateAuthUI();
+      updateCartCount();
+      initIcons();
+
+      // Retrieve parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const orderId = urlParams.get('orderId');
+      const container = document.getElementById('return-card-content');
+
+      if (!orderId) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:20px 0;">
+            <p style="color:#d32f2f;font-weight:600;margin-bottom:20px;">Order ID is missing.</p>
+            <a href="profile.html#orders" class="btn btn-primary">Back to Profile</a>
+          </div>`;
+        return;
+      }
+
+      const order = getOrderById(orderId);
+      if (!order) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:20px 0;">
+            <p style="color:#d32f2f;font-weight:600;margin-bottom:20px;">Order not found.</p>
+            <a href="profile.html#orders" class="btn btn-primary">Back to Profile</a>
+          </div>`;
+        return;
+      }
+
+      if (normalizeOrderStatus(order.status) !== 'delivered') {
+        container.innerHTML = `
+          <div style="text-align:center;padding:20px 0;">
+            <p style="color:#d32f2f;font-weight:600;margin-bottom:20px;">Only delivered orders can be returned.</p>
+            <a href="profile.html#orders" class="btn btn-primary">Back to Profile</a>
+          </div>`;
+        return;
+      }
+
+      // Check return requests for products in this order
+      const orderReturns = getReturns().filter(r => r.orderId === order.id);
+      const returnedProductIds = new Set(orderReturns.map(r => r.productId));
+      const returnableItems = order.items.filter(item => !returnedProductIds.has(item.productId));
+
+      const targetProductId = urlParams.get('productId');
+      if (targetProductId && returnedProductIds.has(targetProductId)) {
+        const itemReturn = orderReturns.find(r => r.productId === targetProductId);
+        const statusLabels = { pending: 'pending review', approved: 'approved', rejected: 'rejected' };
+        container.innerHTML = `
+          <div style="text-align:center;padding:20px 0;">
+            <p style="color:#e65100;font-weight:600;margin-bottom:10px;">A return request has already been submitted for this product.</p>
+            <p style="color:#666;font-size:0.88rem;margin-bottom:24px;">The request status is currently: <strong>${statusLabels[itemReturn.status] || itemReturn.status}</strong>.</p>
+            <a href="profile.html#orders" class="btn btn-primary">Back to Profile</a>
+          </div>`;
+        return;
+      }
+
+      if (returnableItems.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center;padding:20px 0;">
+            <p style="color:#e65100;font-weight:600;margin-bottom:10px;">All products in this order have already been returned.</p>
+            <a href="profile.html#orders" class="btn btn-primary">Back to Profile</a>
+          </div>`;
+        return;
+      }
+
+      // Render the form
+      container.innerHTML = `
+        <div class="return-header">
+          <h2>Return Request</h2>
+          <p>Order ID: <strong>${order.id}</strong> · Total: ${formatPrice(order.total)}</p>
+        </div>
+        <form id="return-request-form">
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label style="display:block;margin-bottom:8px;font-weight:600;font-size:0.95rem;">Select Product to Return *</label>
+            <div class="product-select-grid">
+              ${order.items.map((item, index) => {
+                const itemReturn = orderReturns.find(r => r.productId === item.productId);
+                const isReturned = !!itemReturn;
+                // Pre-select target product, or default to first non-returned product
+                const isDefaultTarget = targetProductId ? item.productId === targetProductId : !isReturned;
+                
+                let badgeHtml = '';
+                let disabledAttr = '';
+                if (isReturned) {
+                  disabledAttr = 'disabled';
+                  const statusColors = { pending: '#e65100', approved: '#2e7d32', rejected: '#c62828' };
+                  const statusBg = { pending: '#fff3e0', approved: '#e8f5e9', rejected: '#ffebee' };
+                  const statusLabels = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
+                  badgeHtml = `<span style="margin-left: 12px; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; color: ${statusColors[itemReturn.status]}; background: ${statusBg[itemReturn.status]}; border: 1px solid ${statusColors[itemReturn.status]}40;">Return ${statusLabels[itemReturn.status] || itemReturn.status}</span>`;
+                }
+
+                return `
+                  <label class="product-select-item" style="${isReturned ? 'opacity: 0.65; cursor: not-allowed; background: #faf9f6;' : 'cursor: pointer;'}">
+                    <input type="radio" name="return-product-id" value="${item.productId}" ${isDefaultTarget && !isReturned ? 'checked' : ''} ${disabledAttr} required>
+                    <img src="${item.image}" alt="">
+                    <div class="info">
+                      <h4 style="display: flex; align-items: center; margin: 0 0 4px 0; font-size: 0.95rem; font-weight: 600;">${item.name} ${badgeHtml}</h4>
+                      <p>${item.productCode || item.productId} · Qty: ${item.quantity}</p>
+                    </div>
+                    <span style="font-weight:600;font-size:0.95rem;">${formatPrice(item.price * item.quantity)}</span>
+                  </label>
+                `;
+              }).join('')}
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 20px;">
+            <label for="return-reason-text" style="display:block;margin-bottom:8px;font-weight:600;font-size:0.95rem;">Reason for Return *</label>
+            <textarea id="return-reason-text" rows="4" placeholder="Please explain in detail why you are returning this product..." required style="width:100%;padding:12px;border:1px solid #e2ded5;border-radius:6px;font-family:inherit;font-size:0.9rem;resize:vertical;"></textarea>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 24px;">
+            <label style="display:block;margin-bottom:8px;font-weight:600;font-size:0.95rem;">Upload Photos * <span style="font-weight:normal;color:#ff4d4d;font-size:0.8rem;">(At least 1 photo is required)</span></label>
+            <div class="image-upload-area">
+              <input type="file" id="return-photo-upload" accept="image/*" multiple required>
+              <div class="upload-icon-svg" data-icon="plus"></div>
+              <p>Click or Drag to Upload Photos</p>
+              <span>Supports JPG, PNG, WEBP (Max 5MB)</span>
+            </div>
+            <div class="image-previews" id="photo-previews-container"></div>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-full" style="padding:14px 20px;font-size:1rem;">Submit Return Request</button>
+        </form>`;
+
+      initIcons();
+
+      const fileInput = document.getElementById('return-photo-upload');
+      const previewsContainer = document.getElementById('photo-previews-container');
+
+      fileInput.addEventListener('change', (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        files.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const dataUrl = reader.result;
+            returnImages.push(dataUrl);
+
+            // Add preview thumbnail
+            const idx = returnImages.length - 1;
+            const thumb = document.createElement('div');
+            thumb.className = 'image-preview-thumbnail';
+            thumb.dataset.index = idx;
+            thumb.innerHTML = `
+              <img src="${dataUrl}" alt="">
+              <button type="button" class="remove-image-btn" onclick="removeUploadedImage(${idx})">&times;</button>`;
+            previewsContainer.appendChild(thumb);
+            validatePhotos();
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      window.removeUploadedImage = (index) => {
+        returnImages.splice(index, 1);
+        
+        // Re-render previews to keep indices in sync
+        previewsContainer.innerHTML = '';
+        returnImages.forEach((dataUrl, idx) => {
+          const thumb = document.createElement('div');
+          thumb.className = 'image-preview-thumbnail';
+          thumb.dataset.index = idx;
+          thumb.innerHTML = `
+            <img src="${dataUrl}" alt="">
+            <button type="button" class="remove-image-btn" onclick="removeUploadedImage(${idx})">&times;</button>`;
+          previewsContainer.appendChild(thumb);
+        });
+        validatePhotos();
+      };
+
+      function validatePhotos() {
+        if (returnImages.length > 0) {
+          fileInput.removeAttribute('required');
+        } else {
+          fileInput.setAttribute('required', 'required');
+        }
+      }
+
+      // Handle submission
+      document.getElementById('return-request-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const selectedRadio = document.querySelector('input[name="return-product-id"]:checked');
+        if (!selectedRadio) {
+          showToast('Please select a product to return.');
+          return;
+        }
+
+        const reason = document.getElementById('return-reason-text').value.trim();
+        if (!reason) {
+          showToast('Please provide a reason for return.');
+          return;
+        }
+
+        if (returnImages.length === 0) {
+          showToast('Please upload at least one photo of the product.');
+          return;
+        }
+
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Uploading photos and submitting...';
+
+        const selectedProductId = selectedRadio.value;
+        const item = order.items.find(i => i.productId === selectedProductId);
+        const currentUser = getCurrentUser();
+
+        try {
+          // Upload base64 images to server first if available to save localStorage space
+          const finalImages = [];
+          for (const imgData of returnImages) {
+            if (typeof persistImageDataUrl === 'function') {
+              try {
+                const url = await persistImageDataUrl(imgData);
+                finalImages.push(url);
+              } catch (err) {
+                console.error("Photo upload error:", err);
+                finalImages.push(imgData); // fallback
+              }
+            } else {
+              finalImages.push(imgData);
+            }
+          }
+
+          submitReturn({
+            orderId: order.id,
+            userEmail: currentUser.email,
+            productId: selectedProductId,
+            productName: item.name,
+            reason: reason,
+            images: finalImages
+          });
+
+          // Show professional success screen
+          container.innerHTML = `
+            <div class="return-success-view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M8 12l3 3 5-6"/>
+              </svg>
+              <h2>Thank You!</h2>
+              <p>Your return request has been submitted successfully.<br>We will review the details and contact you shortly.</p>
+              <a href="profile.html#orders" class="btn btn-primary" style="padding:12px 30px;">Back to My Profile</a>
+            </div>`;
+          initIcons();
+        } catch (err) {
+          console.error("Submission failed:", err);
+          showToast('An error occurred during submission. Please try again.');
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalText;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

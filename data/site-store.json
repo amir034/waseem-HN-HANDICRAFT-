@@ -35,8 +35,8 @@
           "createdAt": "2026-06-25T19:49:46.496Z"
         }
       ],
-      "loginCount": 13,
-      "lastLogin": "2026-07-06T12:31:14.777365Z",
+      "loginCount": 20,
+      "lastLogin": "2026-07-10T13:14:18.201990Z",
       "createdAt": "2026-06-25T11:29:48.479878Z",
       "stockAlerts": [
         {
@@ -45,37 +45,36 @@
           "productCode": "PROD-000011",
           "createdAt": "2026-06-25T19:53:09.245Z"
         }
+      ],
+      "notifications": [
+        {
+          "id": "note_1783578923551",
+          "type": "success",
+          "message": "Your return request for product \"Kala Cotton Handwoven Throw!\" (Order: ORD-000003) was approved: We will initiate your refund.",
+          "orderId": null,
+          "productId": null,
+          "read": false,
+          "createdAt": "2026-07-09T06:35:23.551Z"
+        },
+        {
+          "id": "note_1783578921520",
+          "type": "danger",
+          "message": "Your return request for product \"Kala Cotton Handwoven Throw!\" (Order: ORD-000003) was rejected: Sorry, we can't accept your return request.",
+          "orderId": null,
+          "productId": null,
+          "read": false,
+          "createdAt": "2026-07-09T06:35:21.520Z"
+        },
+        {
+          "id": "note_1783447609163",
+          "type": "danger",
+          "message": "Your return request for product \"Kala Cotton Handwoven Throw!\" (Order: ORD-000003) was rejected: Sorry, we can't accept your return request.",
+          "orderId": null,
+          "productId": null,
+          "read": false,
+          "createdAt": "2026-07-07T18:06:49.163Z"
+        }
       ]
-    },
-    {
-      "id": "user_1783065493876",
-      "name": "Test User",
-      "email": "user_random123@gmail.com",
-      "password": "password123",
-      "addresses": [],
-      "loginCount": 1,
-      "lastLogin": "2026-07-03T07:58:13.876Z",
-      "createdAt": "2026-07-03T07:58:13.876Z"
-    },
-    {
-      "id": "user_1783067949943",
-      "name": "Artisan Tester",
-      "email": "aaa@gmail.com",
-      "password": "123321123",
-      "addresses": [],
-      "loginCount": 2,
-      "lastLogin": "2026-07-03T08:39:09.952Z",
-      "createdAt": "2026-07-03T08:39:09.948166Z"
-    },
-    {
-      "id": "user_1783339729503",
-      "name": "Test Customer",
-      "email": "testpay@gmail.com",
-      "password": "password123",
-      "addresses": [],
-      "loginCount": 2,
-      "lastLogin": "2026-07-06T12:08:49.595Z",
-      "createdAt": "2026-07-06T12:08:49.567299Z"
     }
   ],
   "pending_otps": {

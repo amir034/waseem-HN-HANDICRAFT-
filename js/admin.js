@@ -12,14 +12,53 @@ let editHeroSlideImage = '';
 
 function initAdmin() {
   if (!requireAdmin()) return;
-  renderStats();
-  renderProductsTab();
+  
+  // Set up close button for the user orders modal
+  const closeBtn = document.getElementById('user-orders-modal-close');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      window.location.hash = 'users';
+    });
+  }
+
+  // Set up backdrop click to close the user orders modal
+  const modal = document.getElementById('user-orders-modal');
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        window.location.hash = 'users';
+      }
+    });
+  }
+
+  // Handle routing on hash change and load
+  window.addEventListener('hashchange', handleHashRouting);
+  
+  // Poll for new user accounts / user sync every 4 seconds
+  setInterval(async () => {
+    if (window.HC_API_ENABLED) {
+      await initAuthSync();
+      // If we are currently on the users tab or returns tab, re-render
+      if (currentTab === 'users') {
+        renderUsersTab();
+      } else if (currentTab === 'returns') {
+        renderReturnsTab();
+      }
+      renderStats();
+    }
+  }, 4000);
+
+  // Switch to the correct tab based on the hash (default is products)
+  handleHashRouting();
+
   bindAdminEvents();
 }
 
 function bindAdminEvents() {
   document.querySelectorAll('.admin-tab').forEach(tab => {
-    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    tab.addEventListener('click', () => {
+      window.location.hash = tab.dataset.tab;
+    });
   });
 
   document.getElementById('admin-search').addEventListener('input', (e) => {
@@ -139,12 +178,13 @@ function bindAdminEvents() {
 
   document.getElementById('edit-delete-btn').addEventListener('click', () => {
     if (!editProductId) return;
-    if (confirm('Delete this product? This cannot be undone.')) {
+    showConfirm('Delete this product? This cannot be undone.', () => {
       deleteProduct(editProductId);
       document.getElementById('edit-modal').classList.remove('open');
       renderProductsTab();
       showToast('Product deleted.');
-    }
+      if (typeof pushSiteContentToServer === 'function') pushSiteContentToServer();
+    });
   });
 
   document.getElementById('admin-logout').addEventListener('click', () => {
@@ -175,10 +215,12 @@ function switchTab(tab) {
   if (tab === 'shipment') renderShipmentPanel();
   if (tab === 'delivered') renderDeliveredPanel();
   if (tab === 'users') renderUsersTab();
+  if (tab === 'returns') renderReturnsTab();
   if (tab === 'hero') renderHeroTab();
   if (tab === 'artisans') renderArtisansTab();
   if (tab === 'announcements') renderAnnouncementsTab();
   if (tab === 'promo') renderPromoTab();
+  if (tab === 'testimonials') renderTestimonialsTab();
   renderStats();
 }
 
@@ -381,11 +423,12 @@ function bindProductCardEvents(container) {
     if (deleteBtn) {
       deleteBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        if (confirm('Delete this product? This cannot be undone.')) {
+        showConfirm('Delete this product? This cannot be undone.', () => {
           deleteProduct(id);
           renderProductsTab();
           showToast('Product deleted.');
-        }
+          if (typeof pushSiteContentToServer === 'function') pushSiteContentToServer();
+        });
       });
     }
 
@@ -835,6 +878,11 @@ function bindOrderActionEvents(container) {
         refreshOrderPanels();
         if (action === 'shipped') switchTab('shipment');
         else if (action === 'delivered') switchTab('delivered');
+        const modal = document.getElementById('user-orders-modal');
+        if (modal && modal.classList.contains('open')) {
+          const email = modal.querySelector('[data-user-email]')?.dataset.userEmail;
+          if (email) showUserOrders(email);
+        }
         const panel = document.getElementById('user-detail-panel');
         if (panel && panel.innerHTML) {
           const email = panel.querySelector('[data-user-email]')?.dataset.userEmail;
@@ -848,14 +896,15 @@ function bindOrderActionEvents(container) {
 
   container.querySelectorAll('.item-unavailable-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      if (!confirm('Mark this item as not available and notify the user?')) return;
-      const item = markOrderItemUnavailable(btn.dataset.order, btn.dataset.product);
-      if (item) {
-        showToast('User has been notified that this item is not available.');
-        const order = getOrderById(btn.dataset.order);
-        if (order) showUserOrders(order.userEmail);
-        else refreshOrderPanels();
-      }
+      showConfirm('Mark this item as not available and notify the user?', () => {
+        const item = markOrderItemUnavailable(btn.dataset.order, btn.dataset.product);
+        if (item) {
+          showToast('User has been notified that this item is not available.');
+          const order = getOrderById(btn.dataset.order);
+          if (order) showUserOrders(order.userEmail);
+          else refreshOrderPanels();
+        }
+      });
     });
   });
 }
@@ -921,66 +970,272 @@ function renderUsersTab() {
   `).join('');
 
   container.querySelectorAll('.admin-user-card').forEach(card => {
-    card.addEventListener('click', () => showUserOrders(card.dataset.email));
+    card.addEventListener('click', () => {
+      window.location.hash = `users?email=${card.dataset.email}`;
+    });
   });
 }
 
 function showUserOrders(email) {
-  const user = getUsers().find(u => u.email === email);
+  const user = getUsers().find(u => normalizeEmail(u.email) === normalizeEmail(email));
+  if (!user) return;
   const orders = getUserOrders(email);
-  const panel = document.getElementById('user-detail-panel');
+  const modal = document.getElementById('user-orders-modal');
+  const modalBody = document.getElementById('user-orders-modal-body');
   const labels = getCategoryLabels();
   const orderCount = orders.length;
 
-  panel.innerHTML = `
-    <div class="user-detail-header">
-      <h3>${user.name}'s Profile</h3>
-      <button class="admin-close-detail" onclick="document.getElementById('user-detail-panel').innerHTML=''">&times;</button>
-    </div>
-    <div class="user-detail-stats" data-user-email="${user.email}">
-      <p><strong>Email:</strong> ${user.email}</p>
-      <p><strong>Total Logins:</strong> ${user.loginCount || 0}</p>
-      <p><strong>Total Orders:</strong> ${orderCount}</p>
-    </div>
-    <div class="user-detail-actions">
-      <button type="button" class="btn btn-outline-accent btn-sm admin-delete-user-btn" data-email="${user.email}">Delete User Account</button>
-    </div>
-    <h4 class="user-orders-heading">${user.name}'s Orders (${orderCount})</h4>
-    ${orders.length === 0 ? '<p class="admin-empty">No orders placed.</p>' : orders.map(order => `
-      <div class="admin-order-card">
-        <p><strong>Order ID:</strong> ${order.id}</p>
-        <p><strong>Date:</strong> ${new Date(order.createdAt).toLocaleString('en-IN')}</p>
-        <p><strong>Status:</strong> <span class="order-status status-${normalizeOrderStatus(order.status)}">${getOrderStatusLabel(order.status)}</span></p>
-        <p><strong>Phone:</strong> ${order.addressDetails?.phone || '—'}</p>
-        <p><strong>Address:</strong> ${order.shippingAddress}</p>
-        <div class="admin-order-items">
+  // Split orders
+  const currentOrders = orders.filter(o => normalizeOrderStatus(o.status) !== 'delivered');
+  const oldDeliveredOrders = orders.filter(o => normalizeOrderStatus(o.status) === 'delivered');
+
+  // Split old delivered orders into return orders vs delivered orders
+  const returns = getReturns().filter(r => normalizeEmail(r.userEmail) === normalizeEmail(email));
+  const returnedOrderIds = new Set(returns.map(r => r.orderId));
+
+  const returnOrdersList = oldDeliveredOrders.filter(o => returnedOrderIds.has(o.id));
+  const regularDeliveredList = oldDeliveredOrders.filter(o => !returnedOrderIds.has(o.id));
+
+  // Detect currently selected sub-tab before overwrite
+  const oldTabBtnWasActive = document.getElementById('tab-btn-old') && 
+    document.getElementById('tab-btn-old').style.background !== 'none';
+
+  // Helper to render an order card
+  const renderOrderCard = (order, isReturnSection = false) => {
+    const date = new Date(order.createdAt).toLocaleString('en-IN');
+    const status = normalizeOrderStatus(order.status);
+    
+    let returnRequestsHtml = '';
+    if (isReturnSection) {
+      const orderReturns = returns.filter(r => r.orderId === order.id);
+      returnRequestsHtml = `
+        <div class="admin-order-returns" style="margin-top: 16px; padding: 16px; background: #faf9f6; border: 1px solid #e2ded5; border-radius: 8px;">
+          <h5 style="margin: 0 0 12px 0; font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--color-accent); font-weight: 600;">Return Request Details</h5>
+          ${orderReturns.map(ret => {
+            const statusLabels = { pending: 'Pending Approval', approved: 'Approved', rejected: 'Rejected' };
+            const statusColors = { pending: '#e65100', approved: '#2e7d32', rejected: '#c62828' };
+            const statusBg = { pending: '#fff3e0', approved: '#e8f5e9', rejected: '#ffebee' };
+            
+            let actionButtons = '';
+            if (ret.status === 'pending') {
+              actionButtons = `
+                <div style="margin-top: 12px; display: flex; gap: 8px;">
+                  <button type="button" class="btn btn-sm" style="background: #2e7d32; color: white; border: none; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; border-radius: 4px;" onclick="updateReturnStatus('${ret.id}', 'approved')">Approve Return</button>
+                  <button type="button" class="btn btn-sm" style="background: #c62828; color: white; border: none; padding: 6px 12px; font-size: 0.8rem; cursor: pointer; border-radius: 4px;" onclick="updateReturnStatus('${ret.id}', 'rejected')">Reject Return</button>
+                </div>`;
+            }
+
+            return `
+              <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e2ded5; &:last-child { border: none; margin-bottom: 0; padding-bottom: 0; }">
+                <p style="margin: 0 0 6px 0;"><strong>Product:</strong> ${ret.productName} <code>(${ret.productId})</code></p>
+                <p style="margin: 0 0 6px 0;"><strong>Reason:</strong> <span style="font-style: italic; color: #555;">"${ret.reason}"</span></p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0;">
+                  ${(ret.images || []).map(img => `
+                    <img src="${img}" style="width: 70px; height: 70px; object-fit: cover; border-radius: 4px; border: 1px solid #e2ded5; cursor: pointer;" onclick="window.open('${img}')" alt="Return Photo">
+                  `).join('')}
+                </div>
+                <p style="margin: 6px 0 0 0;">
+                  <strong>Status:</strong> 
+                  <span style="display: inline-block; padding: 3px 8px; font-size: 0.75rem; font-weight: 600; border-radius: 4px; color: ${statusColors[ret.status]}; background: ${statusBg[ret.status]};">
+                    ${statusLabels[ret.status] || ret.status}
+                  </span>
+                </p>
+                ${actionButtons}
+              </div>`;
+          }).join('')}
+        </div>`;
+    }
+
+    return `
+      <div class="admin-order-card" style="margin-bottom: 20px; border: 1px solid #e2ded5; border-radius: 10px; padding: 20px; background: white;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+          <div>
+            <strong style="font-size: 1.1rem; color: #222;">Order ID: ${order.id}</strong>
+            <span style="color:#888; font-size:0.8rem; margin-left:12px;">${date}</span>
+          </div>
+          <span class="order-status status-${normalizeOrderStatus(order.status)}">${getOrderStatusLabel(order.status)}</span>
+        </div>
+        <p style="margin: 4px 0;"><strong>Phone:</strong> ${order.addressDetails?.phone || '—'}</p>
+        <p style="margin: 4px 0;"><strong>Address:</strong> ${order.shippingAddress}</p>
+        <div class="admin-order-items" style="margin: 12px 0; background: #faf9f6; border-radius: 6px; padding: 12px;">
           ${order.items.map(item => renderOrderItemHtml(item, labels, {
             showUnavailableAction: true,
             orderId: order.id
           })).join('')}
         </div>
-        <p><strong>Total:</strong> ${formatPrice(order.total)}</p>
+        <p style="margin: 4px 0; font-size: 1.05rem;"><strong>Total:</strong> ${formatPrice(order.total)}</p>
         ${renderOrderActions(order)}
-      </div>
-    `).join('')}
-  `;
-  bindOrderActionEvents(panel);
+        ${returnRequestsHtml}
+      </div>`;
+  };
 
-  const deleteUserBtn = panel.querySelector('.admin-delete-user-btn');
+  modalBody.innerHTML = `
+    <div class="user-detail-header" style="margin-bottom: 24px;">
+      <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; margin: 0; color: #222;">${user.name}'s Profile & Orders</h3>
+    </div>
+    <div class="user-detail-stats" data-user-email="${user.email}" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 24px; padding: 16px; background: #faf9f6; border: 1px solid #e2ded5; border-radius: 8px;">
+      <p style="margin:0;"><strong>Email:</strong><br>${user.email}</p>
+      <p style="margin:0;"><strong>Total Logins:</strong><br>${user.loginCount || 0}</p>
+      <p style="margin:0;"><strong>Total Orders:</strong><br>${orderCount}</p>
+    </div>
+    <div class="user-detail-actions" style="margin-bottom: 30px;">
+      <button type="button" class="btn btn-outline-accent btn-sm admin-delete-user-btn" data-email="${user.email}">Delete User Account</button>
+    </div>
+
+    <!-- Sub-tab options for Current and Old orders -->
+    <div class="orders-tab-container" style="display: flex; gap: 12px; margin-bottom: 24px; border-bottom: 1px solid #e2ded5; padding-bottom: 12px;">
+      <button type="button" class="btn btn-sm orders-tab-btn" id="tab-btn-current" style="background: var(--color-accent); color: white; border: 1px solid var(--color-accent); padding: 8px 16px; font-weight: 600; cursor: pointer; border-radius: 4px; transition: all 0.2s;" onclick="switchOrdersTab('current')">Current Orders (${currentOrders.length})</button>
+      <button type="button" class="btn btn-sm orders-tab-btn" id="tab-btn-old" style="background: none; color: #555; border: 1px solid #e2ded5; padding: 8px 16px; font-weight: 600; cursor: pointer; border-radius: 4px; transition: all 0.2s;" onclick="switchOrdersTab('old')">Old Orders (${returnOrdersList.length + regularDeliveredList.length})</button>
+    </div>
+
+    <div class="order-sections-tabs">
+      <div id="orders-list-current">
+        ${currentOrders.length === 0 ? '<p class="admin-empty" style="padding: 12px; color: #888;">No current active orders.</p>' : currentOrders.map(o => renderOrderCard(o)).join('')}
+      </div>
+
+      <div id="orders-list-old" style="display: none;">
+        ${returnOrdersList.length > 0 ? `
+          <div style="margin-bottom: 24px;">
+            <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; margin-bottom: 12px; border-bottom: 2px solid #e65100; padding-bottom: 6px; color: #e65100;">Return Orders (${returnOrdersList.length})</h4>
+            ${returnOrdersList.map(o => renderOrderCard(o, true)).join('')}
+          </div>
+        ` : ''}
+
+        <div style="margin-bottom: 24px;">
+          <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; margin-bottom: 12px; border-bottom: 2px solid #2e7d32; padding-bottom: 6px; color: #2e7d32;">Completed Delivered Orders (${regularDeliveredList.length})</h4>
+          ${regularDeliveredList.length === 0 ? '<p class="admin-empty" style="padding: 12px; color: #888;">No completed orders.</p>' : regularDeliveredList.map(o => renderOrderCard(o)).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+
+  bindOrderActionEvents(modalBody);
+
+  const deleteUserBtn = modalBody.querySelector('.admin-delete-user-btn');
   if (deleteUserBtn) {
     deleteUserBtn.addEventListener('click', () => {
       const emailToDelete = deleteUserBtn.dataset.email;
-      if (!confirm(`Delete user "${user.name}" (${emailToDelete})? This cannot be undone.`)) return;
-      deleteUser(emailToDelete);
-      panel.innerHTML = '';
-      renderUsersTab();
-      renderStats();
-      showToast('User account deleted.');
+      showConfirm(`Delete user "${user.name}" (${emailToDelete})? This cannot be undone.`, async () => {
+        window.HC_ADMIN_MUTATING = true;
+        try {
+          await deleteUser(emailToDelete);
+          modal.classList.remove('open');
+          window.location.hash = 'users';
+          renderUsersTab();
+          renderStats();
+          showToast('User account deleted.');
+        } catch (err) {
+          console.error("Error deleting user:", err);
+          showToast('Failed to delete user.');
+        } finally {
+          setTimeout(() => {
+            window.HC_ADMIN_MUTATING = false;
+          }, 1200);
+        }
+      });
     });
   }
 
-  panel.scrollIntoView({ behavior: 'smooth' });
+  // Restore sub-tab active state
+  if (oldTabBtnWasActive) {
+    window.switchOrdersTab('old');
+  } else {
+    window.switchOrdersTab('current');
+  }
+
+  // Open the modal
+  modal.classList.add('open');
 }
+
+window.switchOrdersTab = function(type) {
+  const currentBtn = document.getElementById('tab-btn-current');
+  const oldBtn = document.getElementById('tab-btn-old');
+  const currentList = document.getElementById('orders-list-current');
+  const oldList = document.getElementById('orders-list-old');
+  
+  if (!currentBtn || !oldBtn || !currentList || !oldList) return;
+
+  if (type === 'current') {
+    currentBtn.style.background = 'var(--color-accent)';
+    currentBtn.style.color = 'white';
+    currentBtn.style.borderColor = 'var(--color-accent)';
+    
+    oldBtn.style.background = 'none';
+    oldBtn.style.color = '#555';
+    oldBtn.style.borderColor = '#e2ded5';
+    
+    currentList.style.display = 'block';
+    oldList.style.display = 'none';
+  } else {
+    oldBtn.style.background = 'var(--color-accent)';
+    oldBtn.style.color = 'white';
+    oldBtn.style.borderColor = 'var(--color-accent)';
+    
+    currentBtn.style.background = 'none';
+    currentBtn.style.color = '#555';
+    currentBtn.style.borderColor = '#e2ded5';
+    
+    currentList.style.display = 'none';
+    oldList.style.display = 'block';
+  }
+};
+
+function handleHashRouting() {
+  const hash = window.location.hash || '#products';
+  const parts = hash.split('?');
+  const tab = parts[0].substring(1);
+  const query = parts[1] || '';
+  const urlParams = new URLSearchParams(query);
+  const email = urlParams.get('email');
+
+  const validTabs = ['products', 'orders', 'shipment', 'delivered', 'users', 'returns', 'hero', 'artisans', 'announcements', 'promo', 'testimonials'];
+  if (validTabs.includes(tab)) {
+    if (currentTab !== tab) {
+      switchTab(tab);
+    }
+    if (tab === 'users' && email) {
+      showUserOrders(email);
+    } else {
+      const modal = document.getElementById('user-orders-modal');
+      if (modal) modal.classList.remove('open');
+    }
+  }
+}
+
+window.updateReturnStatus = function(retId, status) {
+  const returns = getReturns();
+  const ret = returns.find(r => r.id === retId);
+  if (ret) {
+    ret.status = status;
+    saveReturns(returns);
+    
+    // Add user notification
+    if (status === 'approved') {
+      addUserNotification(ret.userEmail, {
+        type: 'success',
+        message: `Your return request for product "${ret.productName}" (Order: ${ret.orderId}) was approved: We will initiate your refund.`
+      });
+    } else {
+      addUserNotification(ret.userEmail, {
+        type: 'danger',
+        message: `Your return request for product "${ret.productName}" (Order: ${ret.orderId}) was rejected: Sorry, we can't accept your return request.`
+      });
+    }
+
+    showToast(`Return status updated to ${status}.`);
+    if (typeof pushSiteContentToServer === 'function') pushSiteContentToServer();
+    
+    // Re-render the active user details in the modal
+    const hash = window.location.hash;
+    const parts = hash.split('?');
+    const query = parts[1] || '';
+    const urlParams = new URLSearchParams(query);
+    const email = urlParams.get('email');
+    if (email) {
+      showUserOrders(email);
+    }
+  }
+};
 
 function handleSearch(query) {
   const resultsEl = document.getElementById('admin-search-results');
@@ -1203,6 +1458,7 @@ function renderHeroTab() {
       moveHeroSlide(btn.closest('.admin-hero-slide-card').dataset.id, 'up');
       renderHeroTab();
       showToast('Slide order updated.');
+      if (typeof pushSiteContentToServer === 'function') pushSiteContentToServer();
     });
   });
 
@@ -1211,6 +1467,7 @@ function renderHeroTab() {
       moveHeroSlide(btn.closest('.admin-hero-slide-card').dataset.id, 'down');
       renderHeroTab();
       showToast('Slide order updated.');
+      if (typeof pushSiteContentToServer === 'function') pushSiteContentToServer();
     });
   });
 }
@@ -1253,12 +1510,13 @@ function deleteHeroSlideCard(id) {
   }
   const slide = getHeroSlideById(id);
   const title = slide ? slide.title : 'this slide';
-  if (confirm(`Delete "${title}"? This cannot be undone.`)) {
+  showConfirm(`Delete "${title}"? This cannot be undone.`, () => {
     deleteHeroSlide(id);
     if (editHeroSlideId === id) resetInlineHeroForm();
     renderHeroTab();
     showToast('Hero slide deleted.');
-  }
+    if (typeof pushSiteContentToServer === 'function') pushSiteContentToServer();
+  });
 }
 
 function bindHeroFormEvents() {
@@ -1466,12 +1724,15 @@ function deleteArtisanCard(id) {
   if (!id) return;
   const artisan = getArtisanById(id);
   const name = artisan ? artisan.name : 'this artisan';
-  if (confirm(`Delete ${name}? This cannot be undone.`)) {
+  showConfirm(`Delete ${name}? This cannot be undone.`, () => {
     deleteArtisan(id);
     if (editArtisanId === id) resetInlineArtisanForm();
+    if (typeof pushSiteContentToServer === 'function') {
+      pushSiteContentToServer();
+    }
     renderArtisansTab();
     showToast('Artisan deleted.');
-  }
+  });
 }
 
 function escapeHtml(str) {
@@ -1985,16 +2246,18 @@ function renderPromoList(promos) {
   });
 
   listContainer.querySelectorAll('.delete-promo-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const code = btn.dataset.code;
-      if (confirm(`Are you sure you want to delete promo code "${code}"?`)) {
+      showConfirm(`Are you sure you want to delete promo code "${code}"?`, () => {
         let promos = getPromos();
-        promos = promos.filter(p => p.code !== code);
+        promos = promos.filter(p => p.code.toUpperCase() !== code.toUpperCase());
         savePromos(promos);
 
         const allProducts = getProducts();
         allProducts.forEach(prod => {
-          if (prod.promoCode === code) {
+          if (prod.promoCode && prod.promoCode.toUpperCase() === code.toUpperCase()) {
             prod.promoEnabled = false;
             prod.promoCode = '';
           }
@@ -2006,12 +2269,393 @@ function renderPromoList(promos) {
         if (typeof pushSiteContentToServer === 'function') {
           pushSiteContentToServer();
         }
-      }
+      });
     });
   });
 }
+
+function renderReturnsTab() {
+  const returns = getReturns();
+  const container = document.getElementById('admin-returns');
+  if (!container) return;
+
+  if (returns.length === 0) {
+    container.innerHTML = '<p class="admin-empty">No return requests submitted yet.</p>';
+    return;
+  }
+
+  const statusLabels = { pending: 'Pending Approval', approved: 'Approved', rejected: 'Rejected' };
+  const statusColors = { pending: '#e65100', approved: '#2e7d32', rejected: '#c62828' };
+  const statusBg = { pending: '#fff3e0', approved: '#e8f5e9', rejected: '#ffebee' };
+
+  container.innerHTML = `
+    <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+      ${returns.map(ret => {
+        const date = new Date(ret.createdAt).toLocaleString('en-IN');
+        
+        // Always show the Approve and Reject options.
+        const isApproved = ret.status === 'approved';
+        const isRejected = ret.status === 'rejected';
+        
+        const approveStyle = isApproved 
+          ? "background: #2e7d32; color: white; border: 2px solid #1b5e20; padding: 8px 16px; font-weight: 600; cursor: pointer; border-radius: 4px;" 
+          : "background: transparent; color: #2e7d32; border: 1px solid #2e7d32; padding: 8px 16px; font-weight: 600; cursor: pointer; border-radius: 4px;" + (isRejected ? " opacity: 0.4;" : "");
+          
+        const rejectStyle = isRejected 
+          ? "background: #c62828; color: white; border: 2px solid #b71c1c; padding: 8px 16px; font-weight: 600; cursor: pointer; border-radius: 4px;" 
+          : "background: transparent; color: #c62828; border: 1px solid #c62828; padding: 8px 16px; font-weight: 600; cursor: pointer; border-radius: 4px;" + (isApproved ? " opacity: 0.4;" : "");
+
+        const approveLabel = isApproved ? '✓ Approved' : 'Approve';
+        const rejectLabel = isRejected ? '✗ Rejected' : 'Reject';
+
+        const actionButtons = `
+          <div style="margin-top: 16px; display: flex; gap: 12px; align-items: center;">
+            <span style="font-size: 0.85rem; font-weight: 600; color: #555; margin-right: 4px;">Update Status:</span>
+            <button type="button" class="btn btn-sm" style="${approveStyle}" onclick="handleAdminReturnStatus('${ret.id}', 'approved')">${approveLabel}</button>
+            <button type="button" class="btn btn-sm" style="${rejectStyle}" onclick="handleAdminReturnStatus('${ret.id}', 'rejected')">${rejectLabel}</button>
+          </div>`;
+
+        return `
+          <div class="admin-order-card" style="border: 1px solid #e2ded5; border-radius: 10px; padding: 20px; background: white;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px;">
+              <div>
+                <strong style="font-size: 1.1rem; color: #222;">Order ID: ${ret.orderId}</strong>
+                <span style="color:#888; font-size:0.8rem; margin-left:12px;">${date}</span>
+              </div>
+              <span style="display: inline-block; padding: 4px 10px; font-size: 0.8rem; font-weight: 600; border-radius: 4px; color: ${statusColors[ret.status]}; background: ${statusBg[ret.status]};">
+                ${statusLabels[ret.status] || ret.status}
+              </span>
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+              <p style="margin: 4px 0;"><strong>Customer:</strong> ${ret.userEmail}</p>
+              <p style="margin: 4px 0;"><strong>Product:</strong> ${ret.productName} <code>(${ret.productId})</code></p>
+              <p style="margin: 4px 0;"><strong>Reason:</strong> <span style="font-style: italic; color: #555;">"${ret.reason}"</span></p>
+            </div>
+
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0;">
+              ${(ret.images || []).map((img, idx) => `
+                <img src="${img}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 6px; border: 1px solid #e2ded5; cursor: pointer; transition: transform 0.2s;" onclick="openReturnPhotoLightbox('${ret.id}', ${idx})" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'" alt="Return Photo">
+              `).join('')}
+            </div>
+
+            ${actionButtons}
+          </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+window.handleAdminReturnStatus = function(retId, status) {
+  const returns = getReturns();
+  const ret = returns.find(r => r.id === retId);
+  if (ret) {
+    ret.status = status;
+    saveReturns(returns);
+    
+    // Add user notification
+    if (status === 'approved') {
+      addUserNotification(ret.userEmail, {
+        type: 'success',
+        message: `Your return request for product "${ret.productName}" (Order: ${ret.orderId}) was approved: We will initiate your refund.`
+      });
+    } else {
+      addUserNotification(ret.userEmail, {
+        type: 'danger',
+        message: `Your return request for product "${ret.productName}" (Order: ${ret.orderId}) was rejected: Sorry, we can't accept your return request.`
+      });
+    }
+    
+    showToast(`Return status updated to ${status}.`);
+    if (typeof pushSiteContentToServer === 'function') pushSiteContentToServer();
+    
+    // Re-render
+    renderReturnsTab();
+    renderStats();
+  }
+};
+
+/* ===== Photo Lightbox Controller Logic ===== */
+let currentLightboxImages = [];
+let currentLightboxIndex = 0;
+
+window.openReturnPhotoLightbox = function(retId, startIndex) {
+  const returns = getReturns();
+  const ret = returns.find(r => r.id === retId);
+  if (!ret || !ret.images || ret.images.length === 0) return;
+
+  currentLightboxImages = ret.images;
+  currentLightboxIndex = startIndex;
+
+  const lightbox = document.getElementById('photo-lightbox');
+  if (!lightbox) return;
+
+  lightbox.classList.add('open');
+  updateLightboxContent();
+
+  if (!lightbox.dataset.listenersInitialized) {
+    initLightboxListeners(lightbox);
+    lightbox.dataset.listenersInitialized = 'true';
+  }
+};
+
+function updateLightboxContent() {
+  const imgEl = document.getElementById('lightbox-img');
+  const captionEl = document.getElementById('lightbox-caption');
+  const prevBtn = document.getElementById('lightbox-prev-btn');
+  const nextBtn = document.getElementById('lightbox-next-btn');
+
+  if (!imgEl) return;
+
+  imgEl.src = currentLightboxImages[currentLightboxIndex];
+
+  if (captionEl) {
+    captionEl.textContent = `Photo ${currentLightboxIndex + 1} of ${currentLightboxImages.length}`;
+  }
+
+  if (currentLightboxImages.length <= 1) {
+    if (prevBtn) prevBtn.style.display = 'none';
+    if (nextBtn) nextBtn.style.display = 'none';
+  } else {
+    if (prevBtn) prevBtn.style.display = 'flex';
+    if (nextBtn) nextBtn.style.display = 'flex';
+  }
+}
+
+window.closeLightbox = function() {
+  const lightbox = document.getElementById('photo-lightbox');
+  if (lightbox) {
+    lightbox.classList.remove('open');
+  }
+};
+
+function showNextLightboxPhoto() {
+  if (currentLightboxImages.length <= 1) return;
+  currentLightboxIndex = (currentLightboxIndex + 1) % currentLightboxImages.length;
+  updateLightboxContent();
+}
+
+function showPrevLightboxPhoto() {
+  if (currentLightboxImages.length <= 1) return;
+  currentLightboxIndex = (currentLightboxIndex - 1 + currentLightboxImages.length) % currentLightboxImages.length;
+  updateLightboxContent();
+}
+
+function initLightboxListeners(lightbox) {
+  const prevBtn = document.getElementById('lightbox-prev-btn');
+  const nextBtn = document.getElementById('lightbox-next-btn');
+  const closeBtn = document.getElementById('lightbox-close-btn');
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showPrevLightboxPhoto();
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      showNextLightboxPhoto();
+    });
+  }
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeLightbox();
+    });
+  }
+
+  lightbox.addEventListener('click', (e) => {
+    closeLightbox();
+  });
+
+  // Touch swipe events
+  let startX = 0;
+  let startY = 0;
+  lightbox.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  lightbox.addEventListener('touchend', (e) => {
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
+    
+    const diffX = startX - endX;
+    const diffY = startY - endY;
+    
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+      const threshold = 50;
+      if (diffX > threshold) {
+        showNextLightboxPhoto();
+      } else if (diffX < -threshold) {
+        showPrevLightboxPhoto();
+      }
+    }
+  }, { passive: true });
+
+  // Keyboard controls
+  document.addEventListener('keydown', (e) => {
+    if (!lightbox.classList.contains('open')) return;
+    
+    if (e.key === 'Escape') {
+      closeLightbox();
+    } else if (e.key === 'ArrowRight') {
+      showNextLightboxPhoto();
+    } else if (e.key === 'ArrowLeft') {
+      showPrevLightboxPhoto();
+    }
+  });
+}
+
+function renderTestimonialsTab() {
+  const container = document.getElementById('admin-testimonials-content');
+  if (!container || typeof getTestimonials !== 'function') {
+    if (container) container.innerHTML = '<p class="admin-empty">Could not load testimonials. Please refresh.</p>';
+    return;
+  }
+
+  const testimonials = getTestimonials();
+
+  container.innerHTML = `
+    <div class="admin-artisan-form-card admin-announcements-card">
+      <h3>Manage Testimonials</h3>
+      <p class="wizard-hint">Add, edit, or remove customer testimonials shown in the slider on the homepage.</p>
+      <form id="testimonials-form">
+        <div id="testimonial-rows" class="admin-announcement-rows">
+          ${testimonials.length === 0
+            ? ''
+            : testimonials.map((t, i) => `
+              <div class="admin-announcement-row" data-id="${t.id}" style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+                  <label style="font-weight:600;">Testimonial ${i + 1}</label>
+                  <button type="button" class="btn btn-sm admin-announcement-remove" title="Remove" style="color:#c0392b !important; border-color:#c0392b !important;">&times;</button>
+                </div>
+                <div class="form-group" style="margin-bottom: 10px;">
+                  <label style="font-size:0.75rem; color:#666;">Review Text</label>
+                  <textarea class="testimonial-text-input" rows="2" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-family:inherit;" required>${escapeHtml(t.text)}</textarea>
+                </div>
+                <div class="form-group">
+                  <label style="font-size:0.75rem; color:#666;">Author & Location</label>
+                  <input type="text" class="testimonial-author-input" value="${escapeAttr(t.author)}" placeholder="e.g. Gaurangi & Ameya, USA" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;" required>
+                </div>
+              </div>
+            `).join('')}
+        </div>
+        <div class="address-form-actions" style="margin-top: 20px;">
+          <button type="button" class="btn btn-secondary btn-sm" id="add-testimonial-row">+ Add Testimonial</button>
+          <button type="submit" class="btn btn-primary">Save Testimonials</button>
+        </div>
+      </form>
+    </div>
+  `;
+
+  const rowsEl = document.getElementById('testimonial-rows');
+
+  function addRow(text = '', author = '') {
+    const index = rowsEl.querySelectorAll('.admin-announcement-row').length;
+    const row = document.createElement('div');
+    row.className = 'admin-announcement-row';
+    row.dataset.id = 'testi_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    row.style.cssText = 'margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #eee;';
+    row.innerHTML = `
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
+        <label style="font-weight:600;">Testimonial ${index + 1}</label>
+        <button type="button" class="btn btn-sm admin-announcement-remove" title="Remove" style="color:#c0392b !important; border-color:#c0392b !important;">&times;</button>
+      </div>
+      <div class="form-group" style="margin-bottom: 10px;">
+        <label style="font-size:0.75rem; color:#666;">Review Text</label>
+        <textarea class="testimonial-text-input" rows="2" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-family:inherit;" required>${escapeHtml(text)}</textarea>
+      </div>
+      <div class="form-group">
+        <label style="font-size:0.75rem; color:#666;">Author & Location</label>
+        <input type="text" class="testimonial-author-input" value="${escapeAttr(author)}" placeholder="e.g. Rajesh Jain, India" style="width:100%; padding:8px; border:1px solid #ccc; border-radius:4px;" required>
+      </div>
+    `;
+    rowsEl.appendChild(row);
+    bindRowEvents(row);
+    renumberRows();
+  }
+
+  function renumberRows() {
+    rowsEl.querySelectorAll('.admin-announcement-row').forEach((row, i) => {
+      row.querySelector('label').textContent = 'Testimonial ' + (i + 1);
+    });
+  }
+
+  function bindRowEvents(row) {
+    row.querySelector('.admin-announcement-remove').addEventListener('click', () => {
+      row.remove();
+      renumberRows();
+    });
+  }
+
+  rowsEl.querySelectorAll('.admin-announcement-row').forEach(bindRowEvents);
+  if (testimonials.length === 0) addRow('', '');
+
+  document.getElementById('add-testimonial-row').addEventListener('click', () => addRow('', ''));
+
+  document.getElementById('testimonials-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const newTestimonials = [...rowsEl.querySelectorAll('.admin-announcement-row')].map(row => {
+      return {
+        id: row.dataset.id,
+        text: row.querySelector('.testimonial-text-input').value.trim(),
+        author: row.querySelector('.testimonial-author-input').value.trim()
+      };
+    }).filter(t => t.text && t.author);
+
+    saveTestimonials(newTestimonials);
+    if (typeof pushSiteContentToServer === 'function') {
+      pushSiteContentToServer();
+    }
+    showToast('Testimonials saved!');
+    renderTestimonialsTab();
+  });
+}
+
 
 document.addEventListener('DOMContentLoaded', async () => {
   if (window.__siteStoreReady) await window.__siteStoreReady;
   initAdmin();
 });
+
+function showConfirm(message, onConfirm) {
+  const modalId = 'custom-confirm-modal';
+  let modal = document.getElementById(modalId);
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = modalId;
+    modal.className = 'admin-modal';
+    modal.style.cssText = 'position: fixed !important; inset: 0; background: rgba(0,0,0,0.6); z-index: 99999; display: none; align-items: center; justify-content: center; padding: 20px;';
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `
+    <div class="admin-modal-content" style="max-width: 400px; width: 100%; padding: 30px; text-align: center; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); background: #ffffff;">
+      <h3 style="font-family: var(--font-display); font-size: 1.3rem; margin-bottom: 12px; color: var(--color-header); text-transform: none; letter-spacing: normal;">Are you sure?</h3>
+      <p style="color: #666; font-size: 0.95rem; margin-bottom: 24px; line-height: 1.4; text-transform: none; letter-spacing: normal;">${escapeHtml(message)}</p>
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button type="button" class="btn btn-secondary confirm-cancel-btn" style="flex:1;">Cancel</button>
+        <button type="button" class="btn btn-primary confirm-ok-btn" style="flex:1; background: #c0392b; border-color: #c0392b; color: white;">Delete</button>
+      </div>
+    </div>
+  `;
+
+  function closeConfirm() {
+    modal.style.display = 'none';
+    modal.classList.remove('open');
+  }
+
+  modal.querySelector('.confirm-cancel-btn').onclick = closeConfirm;
+  modal.querySelector('.confirm-ok-btn').onclick = () => {
+    closeConfirm();
+    onConfirm();
+  };
+  modal.onclick = (e) => { if (e.target === modal) closeConfirm(); };
+
+  modal.style.display = 'flex';
+  modal.classList.add('open');
+}

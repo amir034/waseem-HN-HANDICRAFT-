@@ -37,17 +37,17 @@ function getUsers() {
   return JSON.parse(localStorage.getItem(AUTH_KEY) || '[]');
 }
 
-function saveUsers(users) {
+async function saveUsers(users) {
   localStorage.setItem(AUTH_KEY, JSON.stringify(users));
   if (window.HC_API_ENABLED) {
-    syncUsersToServer(users);
+    await syncUsersToServer(users);
   }
 }
 
-function deleteUser(email) {
+async function deleteUser(email) {
   const normalized = normalizeEmail(email);
   const users = getUsers().filter(u => normalizeEmail(u.email) !== normalized);
-  saveUsers(users);
+  await saveUsers(users);
 }
 
 function saveUserRecord(user) {
@@ -164,14 +164,26 @@ async function initAuthSync() {
     const serverUsers = data.users || [];
     const localUsers = getUsers();
 
-    if (serverUsers.length === 0 && localUsers.length > 0 && window.HC_API_PERSIST) {
+    if (serverUsers.length === 0 && localUsers.length > 0 && window.HC_API_PERSIST && !localStorage.getItem('hc_auth_synced')) {
       await syncUsersToServer(localUsers);
+      localStorage.setItem('hc_auth_synced', 'true');
       return;
     }
 
-    if (serverUsers.length > 0) {
-      mergeUsersFromServer(serverUsers);
-      await syncLocalOnlyUsersToServer(serverUsers);
+    // Trust the server list as the single source of truth
+    localStorage.setItem('hc_auth_synced', 'true');
+    localStorage.setItem(AUTH_KEY, JSON.stringify(serverUsers));
+
+    // Kick out the current user if their account was deleted from the server
+    const email = localStorage.getItem(SESSION_KEY);
+    if (email && !isAdmin()) {
+      const exists = serverUsers.some(u => normalizeEmail(u.email) === normalizeEmail(email));
+      if (!exists) {
+        localStorage.removeItem(SESSION_KEY);
+        localStorage.removeItem(ADMIN_SESSION_KEY);
+        window.location.href = 'login.html';
+        return;
+      }
     }
   } catch {
     window.HC_API_ENABLED = false;
@@ -413,7 +425,10 @@ function updateAuthUI() {
     el.style.display = loggedInUser ? (el.classList.contains('nav-icon') || el.tagName === 'BUTTON' ? 'flex' : '') : 'none';
   });
   document.querySelectorAll('[data-auth="admin"]').forEach(el => {
-    el.style.display = admin ? 'flex' : 'none';
+    el.style.display = admin ? (el.classList.contains('nav-icon') || el.tagName === 'BUTTON' ? 'flex' : '') : 'none';
+  });
+  document.querySelectorAll('[data-auth="logged-in"]').forEach(el => {
+    el.style.display = (loggedInUser || admin) ? (el.classList.contains('nav-icon') || el.tagName === 'BUTTON' ? 'flex' : '') : 'none';
   });
   document.querySelectorAll('[data-user-name]').forEach(el => {
     if (user && !admin) el.textContent = user.name.split(' ')[0];
@@ -604,7 +619,7 @@ function markNotificationRead(email, noteId) {
 }
 
 function isCustomerLoggedIn() {
-  return !!localStorage.getItem(SESSION_KEY);
+  return !!localStorage.getItem(SESSION_KEY) || isAdmin();
 }
 
 function ensureAccountRequiredModal() {
